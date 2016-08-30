@@ -28,6 +28,8 @@ int main (int argc, char ** argv)
     WoodyLexer * lexer = WoodyLexerNew();
     WoodyState * state = WoodyNewState();
 
+    WoodyLexerSetInput(lexer, source);
+
     WoodyParse(state, lexer);
 
     free(source);

@@ -45,6 +45,8 @@ typedef struct
 
 WoodyLexer * WoodyLexerNew ();
 
+void WoodyLexerSetInput (WoodyLexer * lexer, char * input);
+
 WoodyTokenType WoodyLexerNext(WoodyLexer * lexer);
 WoodyTokenType WoodyLexerPeek (WoodyLexer * lexer);
 

@@ -54,6 +54,12 @@ WoodyLexer * WoodyLexerNew ()
 }
 
 
+void WoodyLexerSetInput (WoodyLexer * lexer, char * input)
+{
+    lexer->input = input;
+}
+
+
 static void Lex (WoodyLexer * lexer)
 {
     char c;
