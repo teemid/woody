@@ -24,6 +24,17 @@ typedef struct
 } WoodyParser;
 
 
+WoodyParser * WoodyParserNew (WoodyState * state, WoodyLexer * lexer)
+{
+    WoodyParser * parser = malloc(sizeof(WoodyParser));
+    parser->lexer = lexer;
+    parser->state = state;
+    parser->symbols = SymbolTableNew(20);
+
+    return parser;
+}
+
+
 typedef enum
 {
     PRECEDENCE_NONE,
@@ -52,11 +63,12 @@ typedef struct
 } GrammarRule;
 
 
-static void UnaryOperator (WoodyParser * parser);
-static void InfixOperator (WoodyParser * parser);
-static void VarStatement  (WoodyParser * parser);
-static void Identifier    (WoodyParser * parser);
-static void Literal       (WoodyParser * parser);
+static void ParsePrecedence (WoodyParser * parser, Precedence precedence);
+static void UnaryOperator   (WoodyParser * parser);
+static void InfixOperator   (WoodyParser * parser);
+static void VarStatement    (WoodyParser * parser);
+static void Identifier      (WoodyParser * parser);
+static void Literal         (WoodyParser * parser);
 
 
 #define NO_RULE                          { NULL,          NULL,          PRECEDENCE_NONE, NULL }
@@ -107,15 +119,7 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
 
 static void Expression (WoodyParser * parser)
 {
-    GrammarFn prefix = rules[parser->lexer->current.type].prefix;
-
-    if (!prefix)
-    {
-        printf("Expected prefix in expression");
-        exit(1);
-    }
-
-    prefix(parser);
+    ParsePrecedence(parser, PRECEDENCE_LOWEST);
 }
 
 
@@ -175,7 +179,13 @@ static void UnaryOperator (WoodyParser * parser)
 
 static void InfixOperator (WoodyParser * parser)
 {
-    UNUSED(parser);
+    switch (parser->lexer->current.type)
+    {
+        case TOKEN_PLUS:
+        {
+            InstructionBufferPush(parser->state->code, OP_PLUS);
+        } break;
+    }
 }
 
 
@@ -187,16 +197,45 @@ static void Identifier (WoodyParser * parser)
 
 static void Literal (WoodyParser * parser)
 {
-    UNUSED(parser);
+    WoodyState * state = parser->state;
+    WoodyLexer * lexer = parser->lexer;
+
+    ValueBufferPush(state->constants, lexer->current.value);
+    InstructionBufferPush(state->code, OP_CONSTANT);
+    InstructionBufferPush(state->code, state->constants->count - 1);
+}
+
+
+static void ParsePrecedence (WoodyParser * parser, Precedence precedence)
+{
+    GrammarFn prefix = rules[parser->lexer->current.type].prefix;
+
+    if (!prefix)
+    {
+        printf("Expected prefix at the start of an expression.");
+        exit(1);
+    }
+
+    prefix(parser);
+
+    while (precedence < rules[WoodyLexerPeek(parser->lexer)].precedence)
+    {
+        GrammarFn infix = rules[WoodyLexerNext(parser->lexer)].infix;
+
+        if (!infix)
+        {
+            printf("Expected an infix operator.");
+            exit(1);
+        }
+
+        infix(parser);
+    }
 }
 
 
 void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 {
-    WoodyParser * parser = malloc(sizeof(parser));
-    parser->state = state;
-    parser->lexer = lexer;
-    parser->symbols = SymbolTableNew(20);
+    WoodyParser * parser = WoodyParserNew(state, lexer);
 
     while (WoodyLexerNext(parser->lexer) != TOKEN_EOF)
     {

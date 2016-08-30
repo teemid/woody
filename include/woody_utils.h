@@ -38,7 +38,7 @@ typedef uint32_t Instruction;
     name##Table * name##TableNew (size_t initial_capacity); \
     void name##TableFree (name##Table * table); \
     void name##TableAdd (name##Table * table, key_type key, uint32_t hash, value_type value); \
-    void name##TableRemove (name##Table * table, key_type key, uint32_t hash)
+    void name##TableRemove (name##Table * table, uint32_t hash)
 
 DeclareBuffer(Instruction, Instruction);
 DeclareBuffer(Value, double);
