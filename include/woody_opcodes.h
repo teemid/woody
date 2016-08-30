@@ -3,6 +3,7 @@
 
 typedef enum
 {
+    OP_CONSTANT,
     OP_LOAD,
     OP_STORE,
     OP_PLUS,
