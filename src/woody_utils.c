@@ -108,6 +108,20 @@ static uint32_t djb2 (char * key, size_t length)
         name##TableResize(table, table->capacity * 2);                                       \
     }                                                                                        \
                                                                                              \
+    name##Node * name##TableFind (name##Table * table, uint32_t hash)                        \
+    {                                                                                        \
+        uint32_t index = hash % table->capacity;                                             \
+        name##Node * node = table->nodes + index;                                            \
+                                                                                             \
+        uint32_t i = 0;                                                                      \
+        while (node->hash != INVALID_HASH && node->hash != hash)                             \
+        {                                                                                    \
+            node = table->nodes + (index + i * i);                                           \
+        }                                                                                    \
+                                                                                             \
+        return node;                                                                         \
+    }                                                                                        \
+                                                                                             \
     void name##TableAdd (name##Table * table, key_type key, uint32_t hash, value_type value) \
     {                                                                                        \
         uint32_t index = hash % table->capacity;                                             \
@@ -133,13 +147,11 @@ static uint32_t djb2 (char * key, size_t length)
                                                                                              \
     void name##TableRemove (name##Table * table, uint32_t hash)                              \
     {                                                                                        \
-        uint32_t index = hash % table->capacity;                                             \
-        name##Node * node = table->nodes + index;                                            \
+        name##Node * node = name##TableFind(table, hash);                                    \
                                                                                              \
-        if (node->hash != INVALID_HASH)                                                      \
+        if (node)                                                                            \
         {                                                                                    \
             node->hash = INVALID_HASH;                                                       \
-            table->count--;                                                                  \
         }                                                                                    \
     }
 
