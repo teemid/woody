@@ -155,6 +155,7 @@ static uint32_t djb2 (char * key, size_t length)
         }                                                                                    \
     }
 
+
 DefineBuffer(Instruction, Instruction);
 DefineBuffer(Value, double);
 

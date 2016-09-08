@@ -10,6 +10,10 @@ WoodyState * WoodyNewState ()
 
     state->code = InstructionBufferNew(40);
     state->constants = ValueBufferNew(40);
+    state->stack = ValueBufferNew(40);
+
+    state->ip = state->code->values;
+    state->stack_ptr = state->stack->values;
 
     return state;
 }

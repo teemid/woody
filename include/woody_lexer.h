@@ -6,11 +6,11 @@
 
 typedef enum
 {
-    TOKEN_VAR,
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_ASTERIX,
     TOKEN_SLASH,
+    TOKEN_VAR,
     TOKEN_EQ,
     TOKEN_OPEN_PAREN,
     TOKEN_CLOSE_PAREN,

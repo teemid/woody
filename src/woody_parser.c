@@ -65,9 +65,11 @@ typedef struct
 
 static void ParsePrecedence (WoodyParser * parser, Precedence precedence);
 static void UnaryOperator   (WoodyParser * parser);
+static void Expression      (WoodyParser * parser);
 static void InfixOperator   (WoodyParser * parser);
 static void VarStatement    (WoodyParser * parser);
 static void Identifier      (WoodyParser * parser);
+static void OpenParen       (WoodyParser * parser);
 static void Literal         (WoodyParser * parser);
 
 
@@ -81,13 +83,13 @@ static void Literal         (WoodyParser * parser);
 
 // NOTE (Emil): Each rule is associated with a token.
 GrammarRule rules[] = {
-    /* TOKEN_VAR         */ PREFIX(VarStatement),
     /* TOKEN_PLUS        */ INFIX_OPERATOR("+", PRECEDENCE_TERM),
     /* TOKEN_MINUS       */ OPERATOR("-"),
     /* TOKEN_ASTERIX     */ INFIX_OPERATOR("*", PRECEDENCE_FACTOR),
     /* TOKEN_SLASH       */ INFIX_OPERATOR("/", PRECEDENCE_FACTOR),
+    /* TOKEN_VAR         */ PREFIX(VarStatement),
     /* TOKEN_EQ          */ INFIX_OPERATOR("=", PRECEDENCE_ASSIGNMENT),
-    /* TOKEN_OPEN_PAREN  */ NO_RULE,
+    /* TOKEN_OPEN_PAREN  */ PREFIX(OpenParen),
     /* TOKEN_CLOSE_PAREN */ NO_RULE,
     /* TOKEN_NUMBER      */ PREFIX(Literal),
     /* TOKEN_IDENTIFIER  */ PREFIX(Identifier),
@@ -117,6 +119,20 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
 }
 
 
+static void OpenParen (WoodyParser * parser)
+{
+    PrintToken(parser->lexer);
+
+    WoodyLexerNext(parser->lexer);
+
+    Expression(parser);
+
+    WoodyLexerNext(parser->lexer);
+
+    PrintToken(parser->lexer);
+}
+
+
 static void Expression (WoodyParser * parser)
 {
     ParsePrecedence(parser, PRECEDENCE_LOWEST);
@@ -141,7 +157,7 @@ static void VarStatement (WoodyParser * parser)
         exit(1);
     }
 
-    PrintToken(lexer); // Print the identifier token.
+    Identifier(parser);
 
     /*
      * NOTE (Emil):
@@ -149,6 +165,7 @@ static void VarStatement (WoodyParser * parser)
      */
     uint32_t local = AddLocalVariable(parser);
 
+    UNUSED(local);
 
     /*
      * NOTE (Emil):
@@ -165,9 +182,6 @@ static void VarStatement (WoodyParser * parser)
         WoodyLexerNext(lexer);
         Expression(parser);
     }
-
-    InstructionBufferPush(parser->state->code, OP_STORE);
-    InstructionBufferPush(parser->state->code, local);
 }
 
 
@@ -179,24 +193,29 @@ static void UnaryOperator (WoodyParser * parser)
 
 static void InfixOperator (WoodyParser * parser)
 {
-    switch (parser->lexer->current.type)
-    {
-        case TOKEN_PLUS:
-        {
-            InstructionBufferPush(parser->state->code, OP_PLUS);
-        } break;
-    }
+    PrintToken(parser->lexer);
+
+    uint32_t type = parser->lexer->current.type;
+    GrammarRule rule = rules[type];
+
+    WoodyLexerNext(parser->lexer);
+
+    ParsePrecedence(parser, rule.precedence);
+
+    InstructionBufferPush(parser->state->code, OP_PLUS + type);
 }
 
 
 static void Identifier (WoodyParser * parser)
 {
-    UNUSED(parser);
+    PrintToken(parser->lexer); // Print the identifier token.
 }
 
 
 static void Literal (WoodyParser * parser)
 {
+    PrintToken(parser->lexer);
+
     WoodyState * state = parser->state;
     WoodyLexer * lexer = parser->lexer;
 

@@ -4,11 +4,7 @@
 #include "woody_lexer.h"
 #include "woody_state.h"
 #include "woody_parser.h"
-
-
-/** DEFINE OPCODES **/
-
-/** DEFINE OPCODES END **/
+#include "woody_vm.h"
 
 
 int main (int argc, char ** argv)
@@ -31,6 +27,17 @@ int main (int argc, char ** argv)
     WoodyLexerSetInput(lexer, source);
 
     WoodyParse(state, lexer);
+
+    printf("\n\n");
+
+    for (uint32_t i = 0; i < state->code->count; i++)
+    {
+        printf("%i ", state->code->values[i]);
+    }
+
+    printf("\n\n");
+
+    WoodyRun(state);
 
     free(source);
     free(lexer);

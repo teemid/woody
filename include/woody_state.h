@@ -9,6 +9,8 @@ typedef struct
     Instruction * ip;
     InstructionBuffer * code;
     ValueBuffer * constants;
+    ValueBuffer * stack;
+    double * stack_ptr;
 } WoodyState;
 
 
