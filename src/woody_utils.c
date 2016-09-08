@@ -2,6 +2,7 @@
 #include "stdio.h"
 
 #include "woody_utils.h"
+#include "woody_opcodes.h"
 
 
 #define DefineBuffer(name, type)                                            \
@@ -194,4 +195,36 @@ char * ReadFile (const char * filename)
     fclose(file);
 
     return buffer;
+}
+
+
+void PrintInstructions (InstructionBuffer * buffer)
+{
+    printf("InstructionBuffer: \n");
+
+    for (uint32_t i = 0; i < buffer->count; i++)
+    {
+        uint32_t code = buffer->values[i];
+
+        switch (code)
+        {
+            case OP_PLUS:
+            case OP_MINUS:
+            case OP_MULT:
+            case OP_DIV:
+            case OP_END:
+            {
+                printf("%s\n", woody_opcodes[code]);
+            } break;
+
+            case OP_CONSTANT:
+            case OP_LOAD:
+            case OP_STORE:
+            {
+                printf("%s %d\n", woody_opcodes[code], buffer->values[++i]);
+            }
+        }
+    }
+
+    printf("\n\n");
 }

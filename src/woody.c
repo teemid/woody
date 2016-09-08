@@ -28,14 +28,7 @@ int main (int argc, char ** argv)
 
     WoodyParse(state, lexer);
 
-    printf("\n\n");
-
-    for (uint32_t i = 0; i < state->code->count; i++)
-    {
-        printf("%i ", state->code->values[i]);
-    }
-
-    printf("\n\n");
+    PrintInstructions(state->code);
 
     WoodyRun(state);
 

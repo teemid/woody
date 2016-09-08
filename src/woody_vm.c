@@ -4,30 +4,30 @@
 #include "woody_vm.h"
 
 
-#define POP(state) *((state)->stack_ptr); (state)->stack_ptr--
-#define PUSH(state, value) ValueBufferPush(state->stack, value); (state)->stack_ptr++
+#define POP(state) *(--(state)->stack_ptr)
+#define PUSH(state, value) *(state)->stack_ptr++ = (value)
+
+#define PrintBuffer(name, buffer) \
+    printf("%s", #name); \
+    for (uint32_t i = 0; i < (buffer)->count; i++) \
+    { \
+        printf(" %f", (buffer)->values[i]); \
+    } \
+    printf("\n\n")
+
+#define PrintStack(state) \
+    printf("Stack: "); \
+    for (double * curr = state->stack; curr != (state)->stack_ptr; curr++) \
+    { \
+        printf(" %f", *curr); \
+    } \
+    printf("\n\n")
 
 
 void WoodyRun (WoodyState * state)
 {
-    printf("\nConstants:");
-
-    for (uint32_t i = 0; i < state->constants->count; i++)
+    while (*state->ip != OP_END)
     {
-        printf(" %f", state->constants->values[i]);
-    }
-    printf("\n\n");
-
-    while (state->ip)
-    {
-        printf("\nStack:");
-
-        for (uint32_t i = 0; i < state->stack->count; i++)
-        {
-            printf(" %f", state->stack->values[i]);
-        }
-        printf("\n\n");
-
         uint32_t instruction = *(state->ip++);
         printf("Instruction %s\n", woody_opcodes[instruction]);
 
@@ -47,12 +47,16 @@ void WoodyRun (WoodyState * state)
                 double a = POP(state);
                 double b = POP(state);
 
+                printf("%f - %f\n", a, b);
+
                 PUSH(state, a - b);
             } break;
             case OP_MULT:
             {
                 double a = POP(state);
                 double b = POP(state);
+
+                printf("%f * %f\n", a, b);
 
                 PUSH(state, a * b);
             } break;
@@ -61,7 +65,9 @@ void WoodyRun (WoodyState * state)
                 double a = POP(state);
                 double b = POP(state);
 
-                PUSH(state, a / b);
+                printf("%f / %f\n", b, a);
+
+                PUSH(state, b / a);
             } break;
             case OP_CONSTANT:
             {
@@ -78,5 +84,7 @@ void WoodyRun (WoodyState * state)
 
             } break;
         }
+
+        PrintStack(state);
     }
 }

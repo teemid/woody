@@ -3,7 +3,6 @@
 
 #include "stdint.h"
 
-
 typedef uint32_t Instruction;
 
 
@@ -46,5 +45,7 @@ DeclareBuffer(Value, double);
 DeclareTable(Symbol, char *, uint32_t);
 
 char * ReadFile (const char * filename);
+
+void PrintInstructions(InstructionBuffer * buffer);
 
 #endif

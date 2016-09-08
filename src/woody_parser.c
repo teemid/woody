@@ -258,8 +258,10 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 
     while (WoodyLexerNext(parser->lexer) != TOKEN_EOF)
     {
-        Statement(parser);
+        ParsePrecedence(parser, PRECEDENCE_NONE);
     }
 
     PrintToken(parser->lexer);
+
+    InstructionBufferPush(state->code, OP_END);
 }
