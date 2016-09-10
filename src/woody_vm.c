@@ -26,6 +26,10 @@
 
 void WoodyRun (WoodyState * state)
 {
+    PrintBuffer(Constants, state->constants);
+
+    state->ip = state->code->values;
+
     while (*state->ip != OP_END)
     {
         uint32_t instruction = *(state->ip++);

@@ -3,39 +3,44 @@
 
 #include "woody_utils.h"
 #include "woody_opcodes.h"
+#include "woody_memory.h"
 
 
-#define DefineBuffer(name, type)                                            \
-    name##Buffer * name##BufferNew (size_t initial_capacity)                \
-    {                                                                       \
-        name##Buffer * buffer = malloc(sizeof(name##Buffer));                 \
-        buffer->values = malloc(sizeof(type) * initial_capacity);           \
-        buffer->count = 0;                                                  \
-        buffer->capacity = initial_capacity;                                \
-        \
-        return buffer; \
-    }                                                                       \
-                                                                            \
-    void name##BufferFree (name##Buffer * buffer)                           \
-    {                                                                       \
-        free(buffer->values);                                               \
-        free(buffer);                                                       \
-    }                                                                       \
-                                                                            \
-    void name##BufferPush (name##Buffer * buffer, type value)               \
-    {                                                                       \
-        buffer->values[buffer->count++] = value;                            \
-                                                                            \
-        if (buffer->count == buffer->capacity)                              \
-        {                                                                   \
-            buffer->values = realloc(buffer->values, buffer->capacity * 2); \
-            buffer->capacity = buffer->capacity * 2;                        \
-        }                                                                   \
-    }                                                                       \
-                                                                            \
-    type name##BufferPop (name##Buffer * buffer)                \
-    {                                                                       \
-        return buffer->values[buffer->count--];                             \
+#define DefineBuffer(name, type)                                                                   \
+    name##Buffer * name##BufferNew (size_t initial_capacity)                                       \
+    {                                                                                              \
+        name##Buffer * buffer = (name##Buffer *)Allocate(sizeof(name##Buffer));                    \
+        buffer->values = Buffer(type, initial_capacity);                                           \
+        buffer->count = 0;                                                                         \
+        buffer->capacity = initial_capacity;                                                       \
+                                                                                                   \
+        return buffer;                                                                             \
+    }                                                                                              \
+                                                                                                   \
+    void name##BufferFree (name##Buffer * buffer)                                                  \
+    {                                                                                              \
+        Deallocate(buffer->values);                                                                \
+        Deallocate(buffer);                                                                        \
+    }                                                                                              \
+                                                                                                   \
+    void name##BufferPush (name##Buffer * buffer, type value)                                      \
+    {                                                                                              \
+        buffer->values[buffer->count++] = value;                                                   \
+                                                                                                   \
+        if (buffer->count == buffer->capacity)                                                     \
+        {                                                                                          \
+            type * temp = ReallocateBuffer(type, buffer->values, buffer->capacity * 2);            \
+            if (temp)                                                                              \
+            {                                                                                      \
+                buffer->values = temp;                                                             \
+                buffer->capacity = buffer->capacity * 2;                                           \
+            }                                                                                      \
+        }                                                                                          \
+    }                                                                                              \
+                                                                                                   \
+    type name##BufferPop (name##Buffer * buffer)                                                   \
+    {                                                                                              \
+        return buffer->values[buffer->count--];                                                    \
     }
 
 
@@ -61,8 +66,8 @@ static uint32_t djb2 (char * key, size_t length)
 #define DefineTable(name, key_type, value_type)                                              \
     name##Table * name##TableNew (size_t initial_capacity)                                   \
     {                                                                                        \
-        name##Table * table = malloc(sizeof(name##Table));                                   \
-        table->nodes = malloc(sizeof(name##Node) * initial_capacity);                        \
+        name##Table * table = (name##Table *)Allocate(sizeof(name##Table));                  \
+        table->nodes = Buffer(name##Node, initial_capacity);                                 \
         table->count = 0;                                                                    \
         table->capacity = initial_capacity;                                                  \
                                                                                              \
@@ -71,8 +76,8 @@ static uint32_t djb2 (char * key, size_t length)
                                                                                              \
     void name##TableFree (name##Table * table)                                               \
     {                                                                                        \
-        free(table->nodes);                                                                  \
-        free(table);                                                                         \
+        Deallocate(table->nodes);                                                            \
+        Deallocate(table);                                                                   \
     }                                                                                        \
                                                                                              \
     void name##TableResize (name##Table * table, size_t capacity)                            \
@@ -80,7 +85,7 @@ static uint32_t djb2 (char * key, size_t length)
         name##Node * nodes = table->nodes;                                                   \
         size_t old_capacity = table->capacity;                                               \
                                                                                              \
-        table->nodes = malloc(sizeof(name##Node) * capacity);                                \
+        table->nodes = Buffer(name##Node, capacity);                                         \
         table->capacity = capacity;                                                          \
                                                                                              \
         name##Node * node = NULL;                                                            \
@@ -97,6 +102,8 @@ static uint32_t djb2 (char * key, size_t length)
                 new_node->value = node->value;                                               \
             }                                                                                \
         }                                                                                    \
+                                                                                             \
+        Deallocate(nodes);                                                                   \
     }                                                                                        \
                                                                                              \
     static void name##TableCheckSize (name##Table * table)                                   \
@@ -178,7 +185,7 @@ char * ReadFile (const char * filename)
     size_t size = ftell(file);
     rewind(file);
 
-    char * buffer = malloc(sizeof(char) * size);
+    char * buffer = Buffer(char, size);
     buffer[size - 1] = '\0';
 
     size_t result = fread(buffer, 1, size, file);
@@ -187,7 +194,7 @@ char * ReadFile (const char * filename)
     {
         printf("Read error.\n");
 
-        free(buffer);
+        Deallocate(buffer);
 
         return NULL;
     }

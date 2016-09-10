@@ -1,7 +1,8 @@
 #include "stdio.h"
 
-#include "woody_parser.h"
+#include "woody_memory.h"
 #include "woody_opcodes.h"
+#include "woody_parser.h"
 #include "woody_utils.h"
 
 
@@ -26,7 +27,7 @@ typedef struct
 
 WoodyParser * WoodyParserNew (WoodyState * state, WoodyLexer * lexer)
 {
-    WoodyParser * parser = malloc(sizeof(WoodyParser));
+    WoodyParser * parser = (WoodyParser *)Allocate(sizeof(WoodyParser));
     parser->lexer = lexer;
     parser->state = state;
     parser->symbols = SymbolTableNew(20);

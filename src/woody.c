@@ -1,9 +1,10 @@
 #include "stdio.h"
 
-#include "woody_utils.h"
 #include "woody_lexer.h"
-#include "woody_state.h"
+#include "woody_memory.h"
 #include "woody_parser.h"
+#include "woody_state.h"
+#include "woody_utils.h"
 #include "woody_vm.h"
 
 
@@ -32,8 +33,8 @@ int main (int argc, char ** argv)
 
     WoodyRun(state);
 
-    free(source);
-    free(lexer);
+    Deallocate(source);
+    Deallocate(lexer);
 
     return 0;
 }

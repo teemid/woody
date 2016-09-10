@@ -2,6 +2,7 @@
 #include "stdio.h"
 
 #include "woody_lexer.h"
+#include "woody_memory.h"
 
 
 const char * woody_tokens[] = {
@@ -42,7 +43,7 @@ Keyword keywords[] = {
 
 WoodyLexer * WoodyLexerNew ()
 {
-    WoodyLexer * lexer = malloc(sizeof(WoodyLexer));
+    WoodyLexer * lexer = (WoodyLexer *)Allocate(sizeof(WoodyLexer));
     lexer->position = 0;
     lexer->linenumber = 0;
     lexer->column_number = 0;
