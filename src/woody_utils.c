@@ -6,41 +6,41 @@
 #include "woody_memory.h"
 
 
-#define DefineBuffer(name, type)                                                                   \
-    name##Buffer * name##BufferNew (size_t initial_capacity)                                       \
-    {                                                                                              \
-        name##Buffer * buffer = (name##Buffer *)Allocate(sizeof(name##Buffer));                    \
-        buffer->values = Buffer(type, initial_capacity);                                           \
-        buffer->count = 0;                                                                         \
-        buffer->capacity = initial_capacity;                                                       \
-                                                                                                   \
-        return buffer;                                                                             \
-    }                                                                                              \
-                                                                                                   \
-    void name##BufferFree (name##Buffer * buffer)                                                  \
-    {                                                                                              \
-        Deallocate(buffer->values);                                                                \
-        Deallocate(buffer);                                                                        \
-    }                                                                                              \
-                                                                                                   \
-    void name##BufferPush (name##Buffer * buffer, type value)                                      \
-    {                                                                                              \
-        buffer->values[buffer->count++] = value;                                                   \
-                                                                                                   \
-        if (buffer->count == buffer->capacity)                                                     \
-        {                                                                                          \
-            type * temp = ReallocateBuffer(type, buffer->values, buffer->capacity * 2);            \
-            if (temp)                                                                              \
-            {                                                                                      \
-                buffer->values = temp;                                                             \
-                buffer->capacity = buffer->capacity * 2;                                           \
-            }                                                                                      \
-        }                                                                                          \
-    }                                                                                              \
-                                                                                                   \
-    type name##BufferPop (name##Buffer * buffer)                                                   \
-    {                                                                                              \
-        return buffer->values[buffer->count--];                                                    \
+#define DefineBuffer(name, type)                                                    \
+    name##Buffer * name##BufferNew (size_t initial_capacity)                        \
+    {                                                                               \
+        name##Buffer * buffer = (name##Buffer *)Allocate(sizeof(name##Buffer));     \
+        buffer->values = Buffer(type, initial_capacity);                            \
+        buffer->count = 0;                                                          \
+        buffer->capacity = initial_capacity;                                        \
+                                                                                    \
+        return buffer;                                                              \
+    }                                                                               \
+                                                                                    \
+    void name##BufferFree (name##Buffer * buffer)                                   \
+    {                                                                               \
+        Deallocate(buffer->values);                                                 \
+        Deallocate(buffer);                                                         \
+    }                                                                               \
+                                                                                    \
+    void name##BufferPush (name##Buffer * buffer, type value)                       \
+    {                                                                               \
+        buffer->values[buffer->count++] = value;                                    \
+                                                                                    \
+        if (buffer->count == buffer->capacity)                                      \
+        {                                                                           \
+            type * temp = ResizeBuffer(type, buffer->values, buffer->capacity * 2); \
+            if (temp)                                                               \
+            {                                                                       \
+                buffer->values = temp;                                              \
+                buffer->capacity = buffer->capacity * 2;                            \
+            }                                                                       \
+        }                                                                           \
+    }                                                                               \
+                                                                                    \
+    type name##BufferPop (name##Buffer * buffer)                                    \
+    {                                                                               \
+        return buffer->values[buffer->count--];                                     \
     }
 
 
@@ -169,10 +169,49 @@ DefineBuffer(Value, double);
 
 DefineTable(Symbol, char *, uint32_t);
 
+#define PrintBuffer(buffer, size)                                       \
+    for (uint32_t i = 0; i < (size); i++)                               \
+    {                                                                   \
+        char c = buffer[i];                                             \
+                                                                        \
+        switch(c)                                                       \
+        {                                                               \
+            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': \
+            case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': \
+            case 'm': case 'n': case 'o': case 'p': case 'q': case 'r': \
+            case 's': case 't': case 'u': case 'v': case 'w': case 'x': \
+            case 'y': case 'z':                                         \
+            case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': \
+            case 'G': case 'H': case 'I': case 'J': case 'K': case 'L': \
+            case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': \
+            case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': \
+            case 'Y': case 'Z':                                         \
+            case '_':                                                   \
+            case '=': case '+': case '-': case '*': case '/': case '(': \
+            case ')':                                                   \
+            {                                                           \
+                printf("%c\n", c);                                      \
+            } break;                                                    \
+            case '0': case '1': case '2': case '3': case '4': case '5': \
+            case '6': case '7': case '8': case '9':                     \
+            {                                                           \
+                printf("Number: %i\n", atoi(&c));                       \
+            } break;                                                    \
+            case ' ':                                                   \
+            {                                                           \
+                printf("<Space>\n");                                    \
+            } break;                                                    \
+            default:                                                    \
+            {                                                           \
+                printf("%i\n", c);                                      \
+            } break;                                                    \
+        }                                                               \
+    }
+
 
 char * ReadFile (const char * filename)
 {
-    FILE * file = fopen(filename, "r");
+    FILE * file = fopen(filename, "rb");
 
     if (!file)
     {
@@ -185,10 +224,9 @@ char * ReadFile (const char * filename)
     size_t size = ftell(file);
     rewind(file);
 
-    char * buffer = Buffer(char, size);
-    buffer[size - 1] = '\0';
-
+    char * buffer = calloc(sizeof(char), size + 1); // Buffer(char, size);
     size_t result = fread(buffer, 1, size, file);
+    buffer[size] = 0;
 
     if (!result)
     {

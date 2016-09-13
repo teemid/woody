@@ -1,18 +1,10 @@
 #include "stdio.h"
+#include "stdbool.h"
 
 #include "woody_memory.h"
 #include "woody_opcodes.h"
 #include "woody_parser.h"
 #include "woody_utils.h"
-
-
-#define PrintToken(lexer)                   \
-    printf(                                 \
-        "%.*s %s\n",                        \
-        (lexer)->current.length,            \
-        (lexer)->current.start,             \
-        woody_tokens[(lexer)->current.type] \
-    )
 
 #define UNUSED(ptr) (void)(ptr)
 
@@ -94,13 +86,59 @@ GrammarRule rules[] = {
     /* TOKEN_CLOSE_PAREN */ NO_RULE,
     /* TOKEN_NUMBER      */ PREFIX(Literal),
     /* TOKEN_IDENTIFIER  */ PREFIX(Identifier),
+    /* TOKEN_NEWLINE     */ NO_RULE,
     /* TOKEN_EOF         */ NO_RULE,
 };
+
+#define Next(parser) WoodyLexerNext(parser->lexer)
+#define Peek(parser) WoodyLexerPeek(parser->lexer)
+
+#define Current(parser) (parser)->lexer->current
+#define Lookahead(parser) (parser)->lexer->lookahead
+
+#define PrintToken(parser)                 \
+    printf(                                \
+        "%.*s %s\n",                       \
+        Current(parser).length,            \
+        Current(parser).start,             \
+        woody_tokens[Current(parser).type] \
+    )
+
+
+static bool Match (WoodyParser * parser, WoodyTokenType match)
+{
+    if (Peek(parser) == match)
+    {
+        Next(parser);
+        return true;
+    }
+
+    return false;
+}
+
+
+static void Expect(WoodyParser * parser, WoodyTokenType expected)
+{
+    if (!Match(parser, expected))
+    {
+        printf("Expected %s but got %s", woody_tokens[expected], woody_tokens[Current(parser).type]);
+        exit(1);
+    }
+}
+
+
+static void IgnoreNewLines (WoodyParser * parser)
+{
+    while (Match(parser, TOKEN_NEWLINE))
+    {
+        Next(parser);
+    }
+}
 
 
 static void Statement (WoodyParser * parser)
 {
-    GrammarFn prefix = rules[parser->lexer->current.type].prefix;
+    GrammarFn prefix = rules[Current(parser).type].prefix;
 
     if (!prefix)
     {
@@ -122,15 +160,13 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
 
 static void OpenParen (WoodyParser * parser)
 {
-    PrintToken(parser->lexer);
-
-    WoodyLexerNext(parser->lexer);
+    PrintToken(parser);
 
     Expression(parser);
 
-    WoodyLexerNext(parser->lexer);
+    Expect(parser, TOKEN_CLOSE_PAREN);
 
-    PrintToken(parser->lexer);
+    PrintToken(parser);
 }
 
 
@@ -142,21 +178,9 @@ static void Expression (WoodyParser * parser)
 
 static void VarStatement (WoodyParser * parser)
 {
-    WoodyLexer * lexer = parser->lexer;
+    PrintToken(parser);
 
-    PrintToken(lexer);  // Print the Var token.
-
-    if (lexer->current.type != TOKEN_VAR)
-    {
-        printf("Expected var statement!\n");
-        exit(1);
-    }
-
-    if (WoodyLexerNext(lexer) != TOKEN_IDENTIFIER)
-    {
-        printf("Expected identifier!\n");
-        exit(1);
-    }
+    Expect(parser, TOKEN_IDENTIFIER);
 
     Identifier(parser);
 
@@ -174,14 +198,17 @@ static void VarStatement (WoodyParser * parser)
      * If it is we go to assignment. If not return, the statement
      * declared a variable and is done.
      */
-    if (WoodyLexerPeek(lexer) == TOKEN_EQ)
+    if (Match(parser, TOKEN_EQ))
     {
         // Move to and print the equality token.
-        WoodyLexerNext(lexer); PrintToken(lexer);
+        PrintToken(parser);
 
         // Move to token after TOKEN_EQ, which we assume is an expression.
-        WoodyLexerNext(lexer);
+        // Next(parser);
         Expression(parser);
+
+        InstructionBufferPush(parser->state->code, OP_STORE);
+        InstructionBufferPush(parser->state->code, local);
     }
 }
 
@@ -194,12 +221,12 @@ static void UnaryOperator (WoodyParser * parser)
 
 static void InfixOperator (WoodyParser * parser)
 {
-    PrintToken(parser->lexer);
+    PrintToken(parser); // Print the operator.
 
-    uint32_t type = parser->lexer->current.type;
+    uint32_t type = Current(parser).type;
     GrammarRule rule = rules[type];
 
-    WoodyLexerNext(parser->lexer);
+    // Next(parser);
 
     ParsePrecedence(parser, rule.precedence);
 
@@ -209,18 +236,17 @@ static void InfixOperator (WoodyParser * parser)
 
 static void Identifier (WoodyParser * parser)
 {
-    PrintToken(parser->lexer); // Print the identifier token.
+    PrintToken(parser); // Print the identifier token.
 }
 
 
 static void Literal (WoodyParser * parser)
 {
-    PrintToken(parser->lexer);
+    PrintToken(parser);
 
     WoodyState * state = parser->state;
-    WoodyLexer * lexer = parser->lexer;
 
-    ValueBufferPush(state->constants, lexer->current.value);
+    ValueBufferPush(state->constants, Current(parser).value);
     InstructionBufferPush(state->code, OP_CONSTANT);
     InstructionBufferPush(state->code, state->constants->count - 1);
 }
@@ -228,7 +254,7 @@ static void Literal (WoodyParser * parser)
 
 static void ParsePrecedence (WoodyParser * parser, Precedence precedence)
 {
-    GrammarFn prefix = rules[parser->lexer->current.type].prefix;
+    GrammarFn prefix = rules[Next(parser)].prefix;
 
     if (!prefix)
     {
@@ -238,9 +264,9 @@ static void ParsePrecedence (WoodyParser * parser, Precedence precedence)
 
     prefix(parser);
 
-    while (precedence < rules[WoodyLexerPeek(parser->lexer)].precedence)
+    while (precedence < rules[Peek(parser)].precedence)
     {
-        GrammarFn infix = rules[WoodyLexerNext(parser->lexer)].infix;
+        GrammarFn infix = rules[Next(parser)].infix;
 
         if (!infix)
         {
@@ -257,12 +283,19 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 {
     WoodyParser * parser = WoodyParserNew(state, lexer);
 
-    while (WoodyLexerNext(parser->lexer) != TOKEN_EOF)
+    IgnoreNewLines(parser);
+
+    while (!Match(parser, TOKEN_EOF))
     {
         ParsePrecedence(parser, PRECEDENCE_NONE);
+
+        if (!Match(parser, TOKEN_NEWLINE))
+        {
+            Expect(parser, TOKEN_NEWLINE);
+        }
     }
 
-    PrintToken(parser->lexer);
+    PrintToken(parser);
 
     InstructionBufferPush(state->code, OP_END);
 }

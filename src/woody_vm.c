@@ -81,11 +81,11 @@ void WoodyRun (WoodyState * state)
             } break;
             case OP_LOAD:
             {
-
+                state->ip++;
             } break;
             case OP_STORE:
             {
-
+                state->ip++;
             } break;
         }
 

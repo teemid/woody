@@ -16,6 +16,7 @@ typedef enum
     TOKEN_CLOSE_PAREN,
     TOKEN_NUMBER,
     TOKEN_IDENTIFIER,
+    TOKEN_NEWLINE,
     TOKEN_EOF
 } WoodyTokenType;
 

@@ -16,6 +16,7 @@ const char * woody_tokens[] = {
     "TOKEN_CLOSE_PAREN",
     "TOKEN_NUMBER",
     "TOKEN_IDENTIFIER",
+    "TOKEN_NEWLINE",
     "TOKEN_EOF"
 };
 
@@ -74,11 +75,16 @@ static void Lex (WoodyLexer * lexer)
                 lexer->column_number++;
                 lexer->position++;
             } break;
+            case '\r':
+            {
+                lexer->position++;
+            }
             case '\n':
             {
                 lexer->linenumber++;
                 lexer->position++;
-            } break;
+                SetToken(lexer, lexer->input + lexer->position, TOKEN_NEWLINE);
+            } return;
             case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
             case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
             case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
