@@ -2,18 +2,21 @@
 
 #include "woody_common.h"
 #include "woody_opcodes.h"
+#include "woody_memory.h"
+#include "woody_value.h"
 #include "woody_vm.h"
 
 
-#define POP(state) --(state)->stack_ptr
-#define PUSH(state, value) *(state)->stack_ptr++ = (value)
+#define POP(state) --(state)->current
+#define PUSH(state, value) *(state)->current++ = (value)
 
 
 #define PUSH_NUMBER(state, number_value)             \
-    state->stack_ptr->value.number = (number_value); \
-    state->stack_ptr->type = WOODY_NUMBER;           \
-    ++(state)->stack_ptr
+    state->current->value.number = (number_value); \
+    state->current->type = WOODY_NUMBER;           \
+    ++(state)->current
 
+// void PrintInstructions(InstructionBuffer * buffer);
 
 #define PrintBuffer(name, buffer, length)                        \
     printf("%s", #name);                                         \
@@ -41,7 +44,29 @@
     }                                                            \
     printf("\n\n")
 
-#define PrintStack(state) PrintBuffer(Stack, (state)->stack, (state)->stack_ptr - (state)->stack)
+
+static void PrintStack (WoodyState * state)
+{
+    printf("Stack: ");
+    for (StackPtr i = state->stack; i <= state->current; i++)
+    {
+        switch (i->type)
+        {
+            case WOODY_NUMBER:
+            {
+                printf("%f ", i->value.number);
+            } break;
+            case WOODY_BOOLEAN:
+            {
+                printf("%i ", i->value.boolean);
+            } break;
+            default:
+            {
+                printf("\nError illegal value.");
+            } break;
+        }
+    }
+}
 
 static void DoArithmetic(WoodyState * state, Instruction i)
 {
@@ -85,9 +110,9 @@ static void DoArithmetic(WoodyState * state, Instruction i)
 
 void WoodyRun (WoodyState * state)
 {
-    PrintBuffer(Constants, state->constants->values, state->constants->count);
+    // PrintBuffer(Constants, state->function->constants->values, state->function->constants->count);
 
-    state->ip = state->code->values;
+    state->ip = state->function->code->values;
 
     while (*state->ip != OP_END)
     {
@@ -100,7 +125,7 @@ void WoodyRun (WoodyState * state)
             {
                 uint32_t index = *(state->ip++);
 
-                PUSH(state, state->constants->values[index]);
+                PUSH(state, state->function->constants->values[index]);
             } break;
             case OP_LOAD:
             {

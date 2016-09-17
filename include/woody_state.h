@@ -1,22 +1,25 @@
 #ifndef WOODY_STATE_H
 #define WOODY_STATE_H
 
+#include "woody_function.h"
 #include "woody_value.h"
 
 
-typedef struct
+typedef TaggedValue * StackPtr;
+
+
+typedef struct WoodyState
 {
     Instruction * ip;
-    InstructionBuffer * code;
-    ValueBuffer * constants;
     WoodyFunction * function;
-    TaggedValue * stack;
-    TaggedValue * stack_ptr;
-    TaggedValue * stack_top;
+    StackPtr stack;
+    StackPtr current;
+    StackPtr top;
 } WoodyState;
 
 
 WoodyState * WoodyNewState ();
+void WoodyFreeState(WoodyState * state);
 
 
 #endif

@@ -1,22 +1,30 @@
 #include "woody_memory.h"
 #include "woody_state.h"
-#include "woody_utils.h"
-#include "woody_value.h"
 
 
-WoodyState * WoodyNewState ()
+WoodyState * WoodyNewState (uint32_t initial_stack_size)
 {
     WoodyState * state = (WoodyState *)Allocate(sizeof(WoodyState));
 
-    state->code = InstructionBufferNew(40);
-    state->constants = ValueBufferNew(40);
-    state->stack = Buffer(TaggedValue, 40);
+    state->stack = Buffer(TaggedValue, initial_stack_size);
+    state->current = state->stack;
+    state->top = state->stack + initial_stack_size;
 
-    state->function = WoodyFunctionNew();
+    state->function = WoodyFunctionNew(20);
 
-    state->ip = state->code->values;
-    state->stack_ptr = state->stack;
-    state->stack_top = state->stack + 40;
+    state->ip = NULL;
+
+
 
     return state;
+}
+
+
+void WoodyStateFree (WoodyState * state)
+{
+    Deallocate(state->stack);
+
+    WoodyFunctionFree(state->function);
+
+    Deallocate(state);
 }

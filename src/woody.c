@@ -8,6 +8,24 @@
 #include "woody_vm.h"
 
 
+void WoodyRunFile(char * filename)
+{
+    char * source = ReadFile(filename);
+
+    WoodyLexer * lexer = WoodyLexerNew();
+    WoodyState * state = WoodyNewState();
+
+    WoodyLexerSetInput(lexer, source);
+
+    WoodyParse(state, lexer);
+
+    WoodyRun(state);
+
+    Deallocate(source);
+    Deallocate(lexer);
+}
+
+
 int main (int argc, char ** argv)
 {
     if (argc < 2)
@@ -17,29 +35,7 @@ int main (int argc, char ** argv)
         return 1;
     }
 
-    char * source = NULL;
-    source = ReadFile(argv[1]);
-
-    printf("%s\n\n", source);
-
-    WoodyLexer * lexer = WoodyLexerNew();
-    WoodyState * state = WoodyNewState();
-
-    WoodyLexerSetInput(lexer, source);
-
-    // while (WoodyLexerNext(lexer) != TOKEN_EOF)
-    // {
-    //     printf("%s\n", woody_tokens[lexer->current.type]);
-    // }
-
-    WoodyParse(state, lexer);
-
-    PrintInstructions(state->code);
-
-    WoodyRun(state);
-
-    Deallocate(source);
-    Deallocate(lexer);
+    WoodyRunFile(argv[1]);
 
     return 0;
 }

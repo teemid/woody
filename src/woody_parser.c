@@ -9,6 +9,11 @@
 #define UNUSED(ptr) (void)(ptr)
 
 
+DECLARE_TABLE(Symbol, char *, uint32_t);
+
+DEFINE_TABLE(Symbol, char *, uint32_t);
+
+
 typedef struct WoodyPrototype
 {
     uint8_t arity;
@@ -116,6 +121,9 @@ GrammarRule rules[] = {
 #define Current(parser) (parser)->lexer->current
 #define Lookahead(parser) (parser)->lexer->lookahead
 
+#define PushOp(parser, op) InstructionBufferPush((parser)->state->function->code, op)
+#define PushOpArg(parser, op, argument) PushOp(parser, op); PushOp(parser, argument)
+
 #define PrintToken(parser)                 \
     printf(                                \
         "%.*s %s\n",                       \
@@ -156,6 +164,23 @@ static void IgnoreNewLines (WoodyParser * parser)
 }
 
 
+static uint32_t AddLocalVariable (WoodyParser * parser)
+{
+    UNUSED(parser);
+
+    return 0;
+}
+
+
+static uint32_t AddConstant (WoodyParser * parser, TaggedValue value)
+{
+    UNUSED(parser);
+    UNUSED(value);
+
+    return 0;
+}
+
+
 static void Statement (WoodyParser * parser)
 {
     GrammarFn prefix = rules[Current(parser).type].prefix;
@@ -167,14 +192,6 @@ static void Statement (WoodyParser * parser)
     }
 
     prefix(parser);
-}
-
-
-static uint32_t AddLocalVariable (WoodyParser * parser)
-{
-    UNUSED(parser);
-
-    return 0;
 }
 
 
@@ -210,8 +227,6 @@ static void VarStatement (WoodyParser * parser)
      */
     uint32_t local = AddLocalVariable(parser);
 
-    UNUSED(local);
-
     /*
      * NOTE (Emil):
      * Implement lookahead and check if the next token is '='.
@@ -227,16 +242,13 @@ static void VarStatement (WoodyParser * parser)
         // Next(parser);
         Expression(parser);
 
-        InstructionBufferPush(parser->state->code, OP_STORE);
-        InstructionBufferPush(parser->state->code, local);
+        PushOpArg(parser, OP_STORE, local);
     }
 }
 
 
 static void ParseFunctionParameters (WoodyParser * parser)
 {
-
-
     while (Match(parser, TOKEN_COMMA))
     {
 
@@ -271,11 +283,9 @@ static void InfixOperator (WoodyParser * parser)
     uint32_t type = Current(parser).type;
     GrammarRule rule = rules[type];
 
-    // Next(parser);
-
     ParsePrecedence(parser, rule.precedence);
 
-    InstructionBufferPush(parser->state->code, OP_PLUS + type);
+    PushOp(parser, OP_PLUS + type);
 }
 
 
@@ -289,7 +299,7 @@ static void Literal (WoodyParser * parser)
 {
     PrintToken(parser);
 
-    WoodyState * state = parser->state;
+    uint32_t constants_buffer = 0;
 
     switch (Current(parser).type)
     {
@@ -304,7 +314,7 @@ static void Literal (WoodyParser * parser)
             tvalue.value.number = Current(parser).value.number;
             tvalue.type = WOODY_NUMBER;
 
-            ValueBufferPush(state->constants, tvalue);
+            constants_buffer = AddConstant(parser, tvalue);
         } break;
         default:
         {
@@ -312,9 +322,7 @@ static void Literal (WoodyParser * parser)
         }
     }
 
-
-    InstructionBufferPush(state->code, OP_CONSTANT);
-    InstructionBufferPush(state->code, state->constants->count - 1);
+    PushOpArg(parser, OP_CONSTANT, constants_buffer);
 }
 
 
@@ -363,5 +371,5 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 
     PrintToken(parser);
 
-    InstructionBufferPush(state->code, OP_END);
+    PushOp(parser, OP_END);
 }

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #define Allocate(bytes) malloc(bytes)
+#define ZeroAllocate(element_size, element_count) calloc(element_size, element_count)
 #define Reallocate(old_memory, bytes) realloc(old_memory, bytes)
 #define Deallocate(pointer) free(pointer)
 

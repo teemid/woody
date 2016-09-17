@@ -4,6 +4,10 @@
 #include "woody_utils.h"
 
 
+// Forward declaration
+typedef struct WoodyFunction WoodyFunction;
+
+
 typedef enum
 {
     WOODY_NUMBER,
@@ -13,8 +17,6 @@ typedef enum
 
 extern const char * woody_types[];
 
-typedef struct WoodyFunction WoodyFunction;
-
 typedef union
 {
     double number;
@@ -23,7 +25,7 @@ typedef union
 } WoodyValue;
 
 
-typedef struct
+typedef struct TaggedValue
 {
     WoodyValue value;
     WoodyType type;
@@ -31,22 +33,6 @@ typedef struct
 
 
 DECLARE_BUFFER(Value, TaggedValue);
-
-
-struct WoodyFunction
-{
-    WoodyFunction * parent;
-    WoodyFunction * functions;
-    uint32_t function_count;
-    uint32_t function_capacity;
-    ValueBuffer * constants;
-    InstructionBuffer * code;
-    uint8_t arity;
-};
-
-
-WoodyFunction * WoodyFunctionNew (void);
-void WoodyFunctionFree (WoodyFunction * function);
 
 
 #endif

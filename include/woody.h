@@ -3,4 +3,6 @@
 
 typedef struct WoodyState WoodyState;
 
+void WoodyRunFile(char * filename);
+
 #endif
