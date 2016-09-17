@@ -6,11 +6,17 @@
 
 
 const char * woody_tokens[] = {
+    "TOKEN_VAR",
+    "TOKEN_FUNCTION",
+    "TOKEN_RETURN",
+    "TOKEN_END",
+    "TOKEN_TRUE",
+    "TOKEN_FALSE",
+    "TOKEN_COMMA",
     "TOKEN_PLUS",
     "TOKEN_MINUS",
     "TOKEN_ASTERIX",
     "TOKEN_SLASH",
-    "TOKEN_VAR",
     "TOKEN_EQ",
     "TOKEN_OPEN_PAREN",
     "TOKEN_CLOSE_PAREN",
@@ -28,12 +34,17 @@ typedef struct
 } Keyword;
 
 
-static uint32_t keyword_count = 1;
-
-
 Keyword keywords[] = {
-    { "var", 3 }
+    { "var",      3 },
+    { "function", 8 },
+    { "return",   6 },
+    { "end",      3 },
+    { "true",     4 },
+    { "false",    5 },
 };
+
+
+static uint32_t keyword_count = sizeof(keywords) / sizeof(Keyword);
 
 
 #define SetToken(lexer, start_pos, token_type) \
@@ -53,6 +64,12 @@ WoodyLexer * WoodyLexerNew ()
     lexer->lookahead.type = TOKEN_EOF;
 
     return lexer;
+}
+
+
+void WoodyLexerFree (WoodyLexer * lexer)
+{
+    Deallocate(lexer);
 }
 
 
@@ -110,11 +127,13 @@ static void Lex (WoodyLexer * lexer)
 
                 ptrdiff_t length = stop - start;
 
+                printf("identifier: %.*s, length: %d\n", length, start, length);
+
                 for (uint32_t i = 0; i < keyword_count; i++)
                 {
-                    if ((uint32_t)length == keywords[i].length && strstr(start, keywords[i].keyword) != 0)
+                    if ((uint32_t)length == keywords[i].length && strncmp(start, keywords[i].keyword, length) == 0)
                     {
-                        SetToken(lexer, start, TOKEN_VAR);
+                        SetToken(lexer, start, TOKEN_VAR + i);
                         lexer->current.length = length;
                         return;
                     }
@@ -139,7 +158,7 @@ static void Lex (WoodyLexer * lexer)
 
                 char * end;
 
-                lexer->current.value = strtod(start, &end);
+                lexer->current.value.number = strtod(start, &end);
 
                 if (stop != end)
                 {
@@ -150,6 +169,11 @@ static void Lex (WoodyLexer * lexer)
 
                 SetToken(lexer, start, TOKEN_NUMBER);
                 lexer->current.length = diff;
+            } return;
+            case ',':
+            {
+                SetToken(lexer, lexer->input + lexer->position, TOKEN_COMMA);
+                lexer->position++;
             } return;
             case '+':
             {

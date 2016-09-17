@@ -1,5 +1,6 @@
 #include "stdio.h"
 
+#include "woody_common.h"
 #include "woody_opcodes.h"
 #include "woody_vm.h"
 
@@ -7,21 +8,77 @@
 #define POP(state) *(--(state)->stack_ptr)
 #define PUSH(state, value) *(state)->stack_ptr++ = (value)
 
-#define PrintBuffer(name, buffer) \
-    printf("%s", #name); \
+#define PUSH_NUMBER(state, number_value) \
+    *(state)->stack_ptr->value.number = (number_value); \
+    *(state)->stack_ptr->type = WOODY_NUMBER; \
+    ++(state)->stack_ptr
+
+#define PrintBuffer(name, buffer, length)          \
+    printf("%s", #name);                           \
     for (uint32_t i = 0; i < (buffer)->count; i++) \
-    { \
-        printf(" %f", (buffer)->values[i]); \
-    } \
+    {                                              \
+        switch ((buffer)->values[i].type)          \
+        {                                          \
+            case WOODY_NUMBER:                     \
+            {                                      \
+                printf("number: %d", (buffer)->values[i].value); \
+            } break;                               \
+            case WOODY_BOOLEAN:                    \
+            {                                      \
+                printf("boolean: %i", ); \
+            } break;                               \
+            case WOODY_FUNCTION:                   \
+            {                                      \
+                                                   \
+            } break;                               \
+            default:                               \
+            {                                      \
+                                                   \
+            } break;                               \
+        }                                          \
+    }                                              \
     printf("\n\n")
 
-#define PrintStack(state) \
-    printf("Stack: "); \
-    for (double * curr = state->stack; curr != (state)->stack_ptr; curr++) \
-    { \
-        printf(" %f", *curr); \
-    } \
-    printf("\n\n")
+
+
+static void DoArithmetic(WoodyState * state, Instruction i)
+{
+    TaggedValue * a = POP(state);
+    TaggedValue * b = POP(state);
+
+    Assert(
+        a->type != WOODY_NUMBER || b->type != WOODY_NUMBER,
+        "Trying arithmetic on non-number types"
+    );
+
+    double result = 0;
+
+    switch (i)
+    {
+        case OP_PLUS:
+        {
+            result = a->value.number + b->value.number;
+        } break;
+        case OP_MINUS:
+        {
+            result = b->value.number - a->value.number;
+        } break;
+        case OP_MULT:
+        {
+            result = a->value.number * b->value.number;
+        } break;
+        case OP_DIV:
+        {
+            result = b->value.number / a->value.number;
+        } break;
+        default:
+        {
+            Assert(false, "Illegal arithmetic operation\n");
+        } break;
+    }
+
+    PUSH_NUMBER(state, result);
+}
 
 
 void WoodyRun (WoodyState * state)
@@ -37,42 +94,6 @@ void WoodyRun (WoodyState * state)
 
         switch (instruction)
         {
-            case OP_PLUS:
-            {
-                double a = POP(state);
-                double b = POP(state);
-
-                printf("%f + %f\n", a, b);
-
-                PUSH(state, a + b);
-            } break;
-            case OP_MINUS:
-            {
-                double a = POP(state);
-                double b = POP(state);
-
-                printf("%f - %f\n", a, b);
-
-                PUSH(state, a - b);
-            } break;
-            case OP_MULT:
-            {
-                double a = POP(state);
-                double b = POP(state);
-
-                printf("%f * %f\n", a, b);
-
-                PUSH(state, a * b);
-            } break;
-            case OP_DIV:
-            {
-                double a = POP(state);
-                double b = POP(state);
-
-                printf("%f / %f\n", b, a);
-
-                PUSH(state, b / a);
-            } break;
             case OP_CONSTANT:
             {
                 uint32_t index = *(state->ip++);
@@ -86,6 +107,17 @@ void WoodyRun (WoodyState * state)
             case OP_STORE:
             {
                 state->ip++;
+            } break;
+            case OP_PLUS:
+            case OP_MINUS:
+            case OP_MULT:
+            case OP_DIV:
+            {
+                DoArithmetic(state, instruction);
+            } break;
+            case OP_CALL:
+            {
+
             } break;
         }
 

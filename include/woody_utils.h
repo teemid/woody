@@ -6,7 +6,7 @@
 typedef uint32_t Instruction;
 
 
-#define DeclareBuffer(name, type) \
+#define DECLARE_BUFFER(name, type) \
     typedef struct \
     { \
         type * values; \
@@ -19,7 +19,8 @@ typedef uint32_t Instruction;
     void name##BufferPush (name##Buffer * buffer, type value); \
     type name##BufferPop  (name##Buffer * buffer)
 
-#define DeclareTable(name, key_type, value_type) \
+
+#define DECLARE_TABLE(name, key_type, value_type) \
     typedef struct \
     { \
         key_type key; \
@@ -39,10 +40,10 @@ typedef uint32_t Instruction;
     void name##TableAdd (name##Table * table, key_type key, uint32_t hash, value_type value); \
     void name##TableRemove (name##Table * table, uint32_t hash)
 
-DeclareBuffer(Instruction, Instruction);
-DeclareBuffer(Value, double);
 
-DeclareTable(Symbol, char *, uint32_t);
+DECLARE_BUFFER(Instruction, Instruction);
+
+DECLARE_TABLE(Symbol, char *, uint32_t);
 
 char * ReadFile (const char * filename);
 

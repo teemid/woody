@@ -27,6 +27,11 @@ int main (int argc, char ** argv)
 
     WoodyLexerSetInput(lexer, source);
 
+    // while (WoodyLexerNext(lexer) != TOKEN_EOF)
+    // {
+    //     printf("%s\n", woody_tokens[lexer->current.type]);
+    // }
+
     WoodyParse(state, lexer);
 
     PrintInstructions(state->code);

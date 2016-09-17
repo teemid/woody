@@ -1,7 +1,7 @@
 #ifndef WOODY_STATE_H
 #define WOODY_STATE_H
 
-#include "woody_utils.h"
+#include "woody_value.h"
 
 
 typedef struct
@@ -9,9 +9,10 @@ typedef struct
     Instruction * ip;
     InstructionBuffer * code;
     ValueBuffer * constants;
-    double * stack;
-    double * stack_ptr;
-    double * stack_top;
+    WoodyFunction * function;
+    TaggedValue * stack;
+    TaggedValue * stack_ptr;
+    TaggedValue * stack_top;
 } WoodyState;
 
 

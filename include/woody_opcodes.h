@@ -11,6 +11,7 @@ typedef enum
     OP_CONSTANT,
     OP_LOAD,
     OP_STORE,
+    OP_CALL,
     OP_END,
 } Opcode;
 

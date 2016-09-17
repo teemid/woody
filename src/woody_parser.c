@@ -9,6 +9,17 @@
 #define UNUSED(ptr) (void)(ptr)
 
 
+typedef struct WoodyPrototype
+{
+    uint8_t arity;
+    struct WoodyPrototype * parent;
+    struct WoodyPrototype * functions;
+    uint32_t function_count;
+    uint32_t function_capacity;
+    SymbolTable * symbols;
+} WoodyPrototype;
+
+
 typedef struct
 {
     WoodyState * state;
@@ -56,14 +67,16 @@ typedef struct
 } GrammarRule;
 
 
-static void ParsePrecedence (WoodyParser * parser, Precedence precedence);
-static void UnaryOperator   (WoodyParser * parser);
-static void Expression      (WoodyParser * parser);
-static void InfixOperator   (WoodyParser * parser);
-static void VarStatement    (WoodyParser * parser);
-static void Identifier      (WoodyParser * parser);
-static void OpenParen       (WoodyParser * parser);
-static void Literal         (WoodyParser * parser);
+static void ParsePrecedence   (WoodyParser * parser, Precedence precedence);
+static void UnaryOperator     (WoodyParser * parser);
+static void Expression        (WoodyParser * parser);
+static void InfixOperator     (WoodyParser * parser);
+static void VarStatement      (WoodyParser * parser);
+static void FunctionStatement (WoodyParser * parser);
+static void ReturnStatement   (WoodyParser * parser);
+static void Identifier        (WoodyParser * parser);
+static void OpenParen         (WoodyParser * parser);
+static void Literal           (WoodyParser * parser);
 
 
 #define NO_RULE                          { NULL,          NULL,          PRECEDENCE_NONE, NULL }
@@ -76,11 +89,17 @@ static void Literal         (WoodyParser * parser);
 
 // NOTE (Emil): Each rule is associated with a token.
 GrammarRule rules[] = {
+    /* TOKEN_VAR         */ PREFIX(VarStatement),
+    /* TOKEN_FUNCTION    */ PREFIX(FunctionStatement),
+    /* TOKEN_RETURN      */ PREFIX(ReturnStatement),
+    /* TOKEN_END         */ NO_RULE,
+    /* TOKEN_TRUE        */ PREFIX(Literal),
+    /* TOKEN_FALSE       */ PREFIX(Literal),
+    /* TOKEN_COMMA       */ NO_RULE,
     /* TOKEN_PLUS        */ INFIX_OPERATOR("+", PRECEDENCE_TERM),
     /* TOKEN_MINUS       */ OPERATOR("-"),
     /* TOKEN_ASTERIX     */ INFIX_OPERATOR("*", PRECEDENCE_FACTOR),
     /* TOKEN_SLASH       */ INFIX_OPERATOR("/", PRECEDENCE_FACTOR),
-    /* TOKEN_VAR         */ PREFIX(VarStatement),
     /* TOKEN_EQ          */ INFIX_OPERATOR("=", PRECEDENCE_ASSIGNMENT),
     /* TOKEN_OPEN_PAREN  */ PREFIX(OpenParen),
     /* TOKEN_CLOSE_PAREN */ NO_RULE,
@@ -89,6 +108,7 @@ GrammarRule rules[] = {
     /* TOKEN_NEWLINE     */ NO_RULE,
     /* TOKEN_EOF         */ NO_RULE,
 };
+
 
 #define Next(parser) WoodyLexerNext(parser->lexer)
 #define Peek(parser) WoodyLexerPeek(parser->lexer)
@@ -213,6 +233,31 @@ static void VarStatement (WoodyParser * parser)
 }
 
 
+static void ParseFunctionParameters (WoodyParser * parser)
+{
+
+
+    while (Match(parser, TOKEN_COMMA))
+    {
+
+    }
+}
+
+
+static void FunctionStatement (WoodyParser * parser)
+{
+    PrintToken(parser);
+
+    Expect(parser, TOKEN_IDENTIFIER);
+}
+
+
+static void ReturnStatement (WoodyParser * parser)
+{
+    UNUSED(parser);
+}
+
+
 static void UnaryOperator (WoodyParser * parser)
 {
     UNUSED(parser);
@@ -246,7 +291,28 @@ static void Literal (WoodyParser * parser)
 
     WoodyState * state = parser->state;
 
-    ValueBufferPush(state->constants, Current(parser).value);
+    switch (Current(parser).type)
+    {
+        case TOKEN_NUMBER:
+        {
+
+        } break;
+        case TOKEN_TRUE:
+        case TOKEN_FALSE:
+        {
+            TaggedValue tvalue = {};
+            tvalue.value.number = Current(parser).value.number;
+            value->value.type = WOODY_NUMBER;
+
+            ValueBufferPush(state->constants, tvalue);
+        } break;
+        default:
+        {
+            Assert(false, "Unexpected value.");
+        }
+    }
+
+
     InstructionBufferPush(state->code, OP_CONSTANT);
     InstructionBufferPush(state->code, state->constants->count - 1);
 }
