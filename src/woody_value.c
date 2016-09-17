@@ -2,13 +2,15 @@
 #include "woody_value.h"
 
 
-extern static char * woody_types[] = {
+extern const char * woody_types[] = {
     "number",
     "boolean",
     "function",
 };
 
+
 DEFINE_BUFFER(Value, TaggedValue);
+
 
 WoodyFunction * WoodyFunctionNew (void)
 {

@@ -1,6 +1,7 @@
+#include "woody_memory.h"
 #include "woody_state.h"
 #include "woody_utils.h"
-#include "woody_memory.h"
+#include "woody_value.h"
 
 
 WoodyState * WoodyNewState ()
@@ -9,7 +10,7 @@ WoodyState * WoodyNewState ()
 
     state->code = InstructionBufferNew(40);
     state->constants = ValueBufferNew(40);
-    state->stack = Buffer(double, 40);
+    state->stack = Buffer(TaggedValue, 40);
 
     state->function = WoodyFunctionNew();
 

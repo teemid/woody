@@ -16,6 +16,16 @@
         return buffer;                                                                             \
     }                                                                                              \
                                                                                                    \
+    name##Buffer * name##BufferResize (size_t new_capacity)                                        \
+    {                                                                                              \
+        type * temp = ReallocateBuffer(type, buffer->values, buffer->capacity * 2);                \
+        if (temp)                                                                                  \
+        {                                                                                          \
+            buffer->values = temp;                                                                 \
+            buffer->capacity = buffer->capacity * 2;                                               \
+        }                                                                                          \
+    }                                                                                              \
+                                                                                                   \
     void name##BufferFree (name##Buffer * buffer)                                                  \
     {                                                                                              \
         Deallocate(buffer->values);                                                                \
@@ -28,12 +38,7 @@
                                                                                                    \
         if (buffer->count == buffer->capacity)                                                     \
         {                                                                                          \
-            type * temp = ReallocateBuffer(type, buffer->values, buffer->capacity * 2);            \
-            if (temp)                                                                              \
-            {                                                                                      \
-                buffer->values = temp;                                                             \
-                buffer->capacity = buffer->capacity * 2;                                           \
-            }                                                                                      \
+            buffer = name##BufferResize(buffer);                                                   \
         }                                                                                          \
     }                                                                                              \
                                                                                                    \
@@ -164,7 +169,7 @@ static uint32_t djb2 (char * key, size_t length)
 
 
 DEFINE_BUFFER(Instruction, Instruction);
-DEFINE_BUFFER(Value, double);
+
 
 DEFINE_TABLE(Symbol, char *, uint32_t);
 

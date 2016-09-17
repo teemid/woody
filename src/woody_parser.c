@@ -300,9 +300,9 @@ static void Literal (WoodyParser * parser)
         case TOKEN_TRUE:
         case TOKEN_FALSE:
         {
-            TaggedValue tvalue = {};
+            TaggedValue tvalue;
             tvalue.value.number = Current(parser).value.number;
-            value->value.type = WOODY_NUMBER;
+            tvalue.type = WOODY_NUMBER;
 
             ValueBufferPush(state->constants, tvalue);
         } break;

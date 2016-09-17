@@ -11,7 +11,7 @@ typedef enum
     WOODY_FUNCTION,
 } WoodyType;
 
-extern static char * woody_types[];
+extern const char * woody_types[];
 
 typedef struct WoodyFunction WoodyFunction;
 

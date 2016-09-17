@@ -5,41 +5,43 @@
 #include "woody_vm.h"
 
 
-#define POP(state) *(--(state)->stack_ptr)
+#define POP(state) --(state)->stack_ptr
 #define PUSH(state, value) *(state)->stack_ptr++ = (value)
 
-#define PUSH_NUMBER(state, number_value) \
-    *(state)->stack_ptr->value.number = (number_value); \
-    *(state)->stack_ptr->type = WOODY_NUMBER; \
+
+#define PUSH_NUMBER(state, number_value)             \
+    state->stack_ptr->value.number = (number_value); \
+    state->stack_ptr->type = WOODY_NUMBER;           \
     ++(state)->stack_ptr
 
-#define PrintBuffer(name, buffer, length)          \
-    printf("%s", #name);                           \
-    for (uint32_t i = 0; i < (buffer)->count; i++) \
-    {                                              \
-        switch ((buffer)->values[i].type)          \
-        {                                          \
-            case WOODY_NUMBER:                     \
-            {                                      \
+
+#define PrintBuffer(name, buffer, length)                        \
+    printf("%s", #name);                                         \
+    for (uint32_t i = 0; i < (buffer)->count; i++)               \
+    {                                                            \
+        switch ((buffer)->values[i].type)                        \
+        {                                                        \
+            case WOODY_NUMBER:                                   \
+            {                                                    \
                 printf("number: %d", (buffer)->values[i].value); \
-            } break;                               \
-            case WOODY_BOOLEAN:                    \
-            {                                      \
-                printf("boolean: %i", ); \
-            } break;                               \
-            case WOODY_FUNCTION:                   \
-            {                                      \
-                                                   \
-            } break;                               \
-            default:                               \
-            {                                      \
-                                                   \
-            } break;                               \
-        }                                          \
-    }                                              \
+            } break;                                             \
+            case WOODY_BOOLEAN:                                  \
+            {                                                    \
+                printf("boolean: %i", );                         \
+            } break;                                             \
+            case WOODY_FUNCTION:                                 \
+            {                                                    \
+                printf("function: %i", (buffer->values[i]));     \
+            } break;                                             \
+            default:                                             \
+            {                                                    \
+                                                                 \
+            } break;                                             \
+        }                                                        \
+    }                                                            \
     printf("\n\n")
 
-
+#define PrintStack(state) PrintBuffer(Stack, (state)->stack, (state)->stack_ptr - (state)->stack)
 
 static void DoArithmetic(WoodyState * state, Instruction i)
 {
@@ -83,7 +85,7 @@ static void DoArithmetic(WoodyState * state, Instruction i)
 
 void WoodyRun (WoodyState * state)
 {
-    PrintBuffer(Constants, state->constants);
+    PrintBuffer(Constants, state->constants->values, state->constants->count);
 
     state->ip = state->code->values;
 

@@ -15,6 +15,7 @@ typedef uint32_t Instruction;
     } name##Buffer; \
     \
     name##Buffer * name##BufferNew (size_t initial_capacity); \
+    name##Buffer * name##BufferResize (size_t new_capacity); \
     void name##BufferFree (name##Buffer * buffer); \
     void name##BufferPush (name##Buffer * buffer, type value); \
     type name##BufferPop  (name##Buffer * buffer)
