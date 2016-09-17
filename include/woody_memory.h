@@ -9,6 +9,6 @@
 #define Deallocate(pointer) free(pointer)
 
 #define Buffer(type, elements) (type *)malloc(sizeof(type) * elements)
-#define ReallocateBuffer(type, old_buffer, new_size) (type *)realloc(old_buffer, sizeof(type) * new_size)
+#define ResizeBuffer(type, old_buffer, new_size) (type *)realloc(old_buffer, sizeof(type) * new_size)
 
 #endif

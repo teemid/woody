@@ -1,64 +1,65 @@
 #ifndef WOODY_UTILS_H
 #define WOODY_UTILS_H
 
-#include "stdint.h"
+#include "woody_common.h"
 
 
-#define DECLARE_BUFFER(name, type)                                                  \
-    typedef struct name##Buffer                                                     \
-    {                                                                               \
-        type * values;                                                              \
-        size_t count;                                                               \
-        size_t capacity;                                                            \
-    } name##Buffer;                                                                 \
-                                                                                    \
-    name##Buffer * name##BufferNew (size_t initial_capacity);                       \
-    name##Buffer * name##BufferResize (name##Buffer * buffer, size_t new_capacity); \
-    void name##BufferFree (name##Buffer * buffer);                                  \
-    void name##BufferPush (name##Buffer * buffer, type value);                      \
+#define DECLARE_BUFFER(name, type)                                        \
+    typedef struct name##Buffer                                           \
+    {                                                                     \
+        type * values;                                                    \
+        size_t count;                                                     \
+        size_t capacity;                                                  \
+    } name##Buffer;                                                       \
+                                                                          \
+    name##Buffer * name##BufferNew (size_t initial_capacity);             \
+    void name##BufferResize (name##Buffer * buffer, size_t new_capacity); \
+    void name##BufferFree (name##Buffer * buffer);                        \
+    void name##BufferPush (name##Buffer * buffer, type value);            \
     type name##BufferPop  (name##Buffer * buffer)
 
 
-#define DEFINE_BUFFER(name, type)                                                  \
-    name##Buffer * name##BufferNew (size_t initial_capacity)                       \
-    {                                                                              \
-        name##Buffer * buffer = (name##Buffer *)Allocate(sizeof(name##Buffer));    \
-        buffer->values = Buffer(type, initial_capacity);                           \
-        buffer->count = 0;                                                         \
-        buffer->capacity = initial_capacity;                                       \
-                                                                                   \
-        return buffer;                                                             \
-    }                                                                              \
-                                                                                   \
-    name##Buffer * name##BufferResize (name##Buffer * buffer, size_t new_capacity) \
-    {                                                                              \
-        type * temp = ReallocateBuffer(type, buffer->values, new_capacity);        \
-        if (temp)                                                                  \
-        {                                                                          \
-            buffer->values = temp;                                                 \
-            buffer->capacity = new_capacity;                                       \
-        }                                                                          \
-    }                                                                              \
-                                                                                   \
-    void name##BufferFree (name##Buffer * buffer)                                  \
-    {                                                                              \
-        Deallocate(buffer->values);                                                \
-        Deallocate(buffer);                                                        \
-    }                                                                              \
-                                                                                   \
-    void name##BufferPush (name##Buffer * buffer, type value)                      \
-    {                                                                              \
-        buffer->values[buffer->count++] = value;                                   \
-                                                                                   \
-        if (buffer->count == buffer->capacity)                                     \
-        {                                                                          \
-            buffer = name##BufferResize(buffer, buffer->capacity * 2);             \
-        }                                                                          \
-    }                                                                              \
-                                                                                   \
-    type name##BufferPop (name##Buffer * buffer)                                   \
-    {                                                                              \
-        return buffer->values[buffer->count--];
+#define DEFINE_BUFFER(name, type)                                               \
+    name##Buffer * name##BufferNew (size_t initial_capacity)                    \
+    {                                                                           \
+        name##Buffer * buffer = (name##Buffer *)Allocate(sizeof(name##Buffer)); \
+        buffer->values = Buffer(type, initial_capacity);                        \
+        buffer->count = 0;                                                      \
+        buffer->capacity = initial_capacity;                                    \
+                                                                                \
+        return buffer;                                                          \
+    }                                                                           \
+                                                                                \
+    void name##BufferResize (name##Buffer * buffer, size_t new_capacity)        \
+    {                                                                           \
+        type * temp = ResizeBuffer(type, buffer->values, new_capacity);         \
+        if (temp)                                                               \
+        {                                                                       \
+            buffer->values = temp;                                              \
+            buffer->capacity = new_capacity;                                    \
+        }                                                                       \
+    }                                                                           \
+                                                                                \
+    void name##BufferFree (name##Buffer * buffer)                               \
+    {                                                                           \
+        Deallocate(buffer->values);                                             \
+        Deallocate(buffer);                                                     \
+    }                                                                           \
+                                                                                \
+    void name##BufferPush (name##Buffer * buffer, type value)                   \
+    {                                                                           \
+        buffer->values[buffer->count++] = value;                                \
+                                                                                \
+        if (buffer->count == buffer->capacity)                                  \
+        {                                                                       \
+            name##BufferResize(buffer, buffer->capacity * 2);                   \
+        }                                                                       \
+    }                                                                           \
+                                                                                \
+    type name##BufferPop (name##Buffer * buffer)                                \
+    {                                                                           \
+        return buffer->values[buffer->count--];                                 \
+    }
 
 
 #define DECLARE_TABLE(name, key_type, value_type)                                             \

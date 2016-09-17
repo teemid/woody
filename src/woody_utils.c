@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "woody_state.h"
 #include "woody_utils.h"
 #include "woody_opcodes.h"
 #include "woody_memory.h"
@@ -52,13 +53,13 @@ char * ReadFile (const char * filename)
 }
 
 
-void PrintInstructions (InstructionBuffer * buffer)
+void PrintInstructions (WoodyState * state)
 {
     printf("InstructionBuffer: \n");
 
-    for (uint32_t i = 0; i < buffer->count; i++)
+    for (uint32_t i = 0; i < state->function->code->count; i++)
     {
-        uint32_t code = buffer->values[i];
+        uint32_t code = state->function->code->values[i];
 
         switch (code)
         {
@@ -75,7 +76,7 @@ void PrintInstructions (InstructionBuffer * buffer)
             case OP_LOAD:
             case OP_STORE:
             {
-                printf("%s %d\n", woody_opcodes[code], buffer->values[++i]);
+                printf("%s %d\n", woody_opcodes[code], state->function->code->values[++i]);
             }
         }
     }

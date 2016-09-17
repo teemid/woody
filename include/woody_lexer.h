@@ -60,7 +60,7 @@ void WoodyLexerFree (WoodyLexer * lexer);
 
 void WoodyLexerSetInput (WoodyLexer * lexer, char * input);
 
-WoodyTokenType WoodyLexerNext(WoodyLexer * lexer);
+WoodyTokenType WoodyLexerNext (WoodyLexer * lexer);
 WoodyTokenType WoodyLexerPeek (WoodyLexer * lexer);
 
 #endif
