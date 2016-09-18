@@ -1,6 +1,7 @@
-#include "stdio.h"
-#include "stdbool.h"
+#include <stdio.h>
+#include <string.h>
 
+#include "woody_common.h"
 #include "woody_memory.h"
 #include "woody_opcodes.h"
 #include "woody_parser.h"
@@ -13,24 +14,47 @@ DECLARE_TABLE(Symbol, char *, uint32_t);
 
 DEFINE_TABLE(Symbol, char *, uint32_t);
 
+#define HashString(key, length) djb2(key, length)
 
-typedef struct WoodyPrototype
+
+typedef struct
 {
-    uint8_t arity;
-    struct WoodyPrototype * parent;
-    struct WoodyPrototype * functions;
-    uint32_t function_count;
-    uint32_t function_capacity;
+    WoodyFunction * function;
     SymbolTable * symbols;
-} WoodyPrototype;
+} Prototype;
 
 
 typedef struct
 {
     WoodyState * state;
     WoodyLexer * lexer;
-    SymbolTable * symbols;
+    Prototype * prototypes;
+    Prototype * current;
+    uint32_t prototype_count;
+    uint32_t prototype_capacity;
 } WoodyParser;
+
+
+#define CompilingFunc(parser) (parser)->current;
+
+
+static void NewPrototype (WoodyParser * parser)
+{
+    // Check to see if we need to increase the capacity of the prototype buffer.
+    if (parser->prototype_count == parser->prototype_capacity)
+    {
+        parser->prototypes = ResizeBuffer(Prototype, parser->prototypes, parser->prototype_capacity * 2);
+    }
+
+    uint32_t initial_symbol_count = 20;
+
+    WoodyFunction * parent = parser->current->function;
+
+    Prototype * prototype = parser->prototypes + parser->prototype_count++;
+    prototype->symbols = SymbolTableNew(initial_symbol_count);
+    prototype->function = WoodyFunctionNew(parent);
+    prototype->function->parent = parent;
+}
 
 
 WoodyParser * WoodyParserNew (WoodyState * state, WoodyLexer * lexer)
@@ -38,7 +62,19 @@ WoodyParser * WoodyParserNew (WoodyState * state, WoodyLexer * lexer)
     WoodyParser * parser = (WoodyParser *)Allocate(sizeof(WoodyParser));
     parser->lexer = lexer;
     parser->state = state;
-    parser->symbols = SymbolTableNew(20);
+
+    uint32_t initial_prototype_count = 10;
+    parser->prototypes = Buffer(Prototype, initial_prototype_count);
+    parser->prototype_count = 0;
+    parser->prototype_capacity = initial_prototype_count;
+
+    // TODO: Initialize 'main' function.
+    parser->current = parser->prototypes + parser->prototype_count++;
+    parser->current->function = WoodyFunctionNew(NULL);
+    parser->current->symbols = SymbolTableNew(20);
+
+    // Save the function in state.
+    parser->state->functions = parser->current->function;
 
     return parser;
 }
@@ -121,7 +157,10 @@ GrammarRule rules[] = {
 #define Current(parser) (parser)->lexer->current
 #define Lookahead(parser) (parser)->lexer->lookahead
 
-#define PushOp(parser, op) InstructionBufferPush((parser)->state->function->code, op)
+#define CurrentPrototype(parser) ((parser)->prototypes + (parser)->prototype_count - 1)
+#define Constants(parser) (CurrentPrototype(parser)->function->constants)
+
+#define PushOp(parser, op) InstructionBufferPush(CurrentPrototype(parser)->function->code, op)
 #define PushOpArg(parser, op, argument) PushOp(parser, op); PushOp(parser, argument)
 
 #define PrintToken(parser)                 \
@@ -166,17 +205,27 @@ static void IgnoreNewLines (WoodyParser * parser)
 
 static uint32_t AddLocalVariable (WoodyParser * parser)
 {
-    UNUSED(parser);
+    Prototype * prototype = CurrentPrototype(parser);
 
-    return 0;
+    uint32_t local = prototype->symbols->count;
+    uint32_t length = Current(parser).length;
+
+    char * key = (char *)Allocate(length);
+    memcpy(key, Current(parser).start, length * sizeof(char));
+
+    uint32_t hash = HashString(key, length);
+
+    SymbolTableAdd(prototype->symbols, key, hash, local);
+
+    return local;
 }
 
 
 static uint32_t AddConstant (WoodyParser * parser)
 {
-    if (!parser->state->function->constants)
+    if (!Constants(parser))
     {
-        parser->state->function->constants = ValueBufferNew(20);
+        WoodyFunctionInitializeConstants(CurrentPrototype(parser)->function);
     }
 
     TaggedValue tvalue;
@@ -201,9 +250,9 @@ static uint32_t AddConstant (WoodyParser * parser)
         } break;
     }
 
-    ValueBufferPush(parser->state->function->constants, tvalue);
+    ValueBufferPush(Constants(parser), tvalue);
 
-    return parser->state->function->constants->count - 1;
+    return Constants(parser)->count - 1;
 }
 
 
@@ -241,24 +290,14 @@ static void Expression (WoodyParser * parser)
 
 static void VarStatement (WoodyParser * parser)
 {
-    PrintToken(parser);
+    PrintToken(parser); // Print var
 
     Expect(parser, TOKEN_IDENTIFIER);
 
-    Identifier(parser);
+    PrintToken(parser); // Print identifier
 
-    /*
-     * NOTE (Emil):
-     * Here we need a temp structure to hold identifier -> variable number.
-     */
     uint32_t local = AddLocalVariable(parser);
 
-    /*
-     * NOTE (Emil):
-     * Implement lookahead and check if the next token is '='.
-     * If it is we go to assignment. If not return, the statement
-     * declared a variable and is done.
-     */
     if (Match(parser, TOKEN_EQ))
     {
         PrintToken(parser);
@@ -376,4 +415,6 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
     PrintToken(parser);
 
     PushOp(parser, OP_END);
+
+    // TODO (Emil): Clean up the parser.
 }

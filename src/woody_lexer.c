@@ -127,8 +127,6 @@ static void Lex (WoodyLexer * lexer)
 
                 ptrdiff_t length = stop - start;
 
-                printf("identifier: %.*s, length: %d\n", length, start, length);
-
                 for (uint32_t i = 0; i < keyword_count; i++)
                 {
                     if ((uint32_t)length == keywords[i].length && strncmp(start, keywords[i].keyword, length) == 0)

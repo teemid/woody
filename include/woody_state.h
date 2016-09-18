@@ -8,13 +8,23 @@
 typedef TaggedValue * StackPtr;
 
 
-typedef struct WoodyState
+typedef struct
 {
     Instruction * ip;
     WoodyFunction * function;
+    StackPtr start;
+} CallFrame;
+
+
+typedef struct WoodyState
+{
+    WoodyFunction * functions;
     StackPtr stack;
     StackPtr current;
     StackPtr top;
+    CallFrame * frames;
+    uint32_t frame_count;
+    uint32_t frame_capacity;
 } WoodyState;
 
 

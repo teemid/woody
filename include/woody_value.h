@@ -15,6 +15,7 @@ typedef enum
     WOODY_FUNCTION,
 } WoodyType;
 
+
 extern const char * woody_types[];
 
 
@@ -33,7 +34,14 @@ typedef struct TaggedValue
 } TaggedValue;
 
 
+#define Number(tvalue) (tvalue)->value.number
+#define Boolean(tvalue) (tvalue)->value.boolean
+#define Function(tvalue) (tvalue)->value.function
+
+
 DECLARE_BUFFER(Value, TaggedValue);
+
+int32_t ValueBufferFind (ValueBuffer * buffer, TaggedValue value);
 
 
 #endif

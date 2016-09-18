@@ -24,7 +24,9 @@ typedef struct WoodyFunction
 } WoodyFunction;
 
 
-WoodyFunction * WoodyFunctionNew (uint32_t initial_stack_size);
+WoodyFunction * WoodyFunctionNew (WoodyFunction * parent);
+void WoodyFunctionSetParent (WoodyFunction * function, WoodyFunction * parent);
+void WoodyFunctionInitializeConstants (WoodyFunction * function);
 void WoodyFunctionFree (WoodyFunction * function);
 
 

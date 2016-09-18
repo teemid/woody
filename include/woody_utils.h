@@ -80,13 +80,12 @@
     name##Table * name##TableNew (size_t initial_capacity);                                   \
     void name##TableFree (name##Table * table);                                               \
     void name##TableAdd (name##Table * table, key_type key, uint32_t hash, value_type value); \
-    value_type name##TableFind(name##Table * table, uint32_t hash);                           \
+    name##Node * name##TableFind(name##Table * table, uint32_t hash);                         \
     void name##TableRemove (name##Table * table, uint32_t hash)
 
 
 uint32_t djb2(char * key, size_t length);
 
-#define Hash(key, length) djb2(key, length)
 
 #define INVALID_HASH 0
 
@@ -98,6 +97,12 @@ uint32_t djb2(char * key, size_t length);
         table->nodes = Buffer(name##Node, initial_capacity);                                 \
         table->count = 0;                                                                    \
         table->capacity = initial_capacity;                                                  \
+                                                                                             \
+        for (uint32_t i = 0; i < table->capacity; i++)                                       \
+        {                                                                                    \
+            name##Node * node = table->nodes + i;                                            \
+            node->hash = INVALID_HASH;                                                       \
+        }                                                                                    \
                                                                                              \
         return table;                                                                        \
     }                                                                                        \
@@ -149,7 +154,7 @@ uint32_t djb2(char * key, size_t length);
         uint32_t index = hash % table->capacity;                                             \
         name##Node * node = table->nodes + index;                                            \
                                                                                              \
-        uint32_t i = 0;                                                                      \
+        uint32_t i = 1;                                                                      \
         while (node->hash != INVALID_HASH && node->hash != hash)                             \
         {                                                                                    \
             node = table->nodes + (index + i * i);                                           \
@@ -163,7 +168,7 @@ uint32_t djb2(char * key, size_t length);
         uint32_t index = hash % table->capacity;                                             \
         name##Node * node = table->nodes + index;                                            \
                                                                                              \
-        uint32_t i = 0;                                                                      \
+        uint32_t i = 1;                                                                      \
         while (node->hash != INVALID_HASH && node->hash != hash)                             \
         {                                                                                    \
             index = (hash + i * i) % table->capacity;                                        \
@@ -195,7 +200,5 @@ uint32_t djb2(char * key, size_t length);
 char * ReadFile (const char * filename);
 
 typedef struct WoodyState WoodyState;
-
-void PrintInstructions(WoodyState * state);
 
 #endif

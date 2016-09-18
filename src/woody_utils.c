@@ -51,35 +51,3 @@ char * ReadFile (const char * filename)
 
     return buffer;
 }
-
-
-void PrintInstructions (WoodyState * state)
-{
-    printf("InstructionBuffer: \n");
-
-    for (uint32_t i = 0; i < state->function->code->count; i++)
-    {
-        uint32_t code = state->function->code->values[i];
-
-        switch (code)
-        {
-            case OP_PLUS:
-            case OP_MINUS:
-            case OP_MULT:
-            case OP_DIV:
-            case OP_END:
-            {
-                printf("%s\n", woody_opcodes[code]);
-            } break;
-
-            case OP_CONSTANT:
-            case OP_LOAD:
-            case OP_STORE:
-            {
-                printf("%s %d\n", woody_opcodes[code], state->function->code->values[++i]);
-            }
-        }
-    }
-
-    printf("\n\n");
-}

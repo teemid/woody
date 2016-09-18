@@ -2,17 +2,16 @@
 #include "woody_state.h"
 
 
-WoodyState * WoodyNewState (uint32_t initial_stack_size)
+WoodyState * WoodyNewState ()
 {
     WoodyState * state = (WoodyState *)Allocate(sizeof(WoodyState));
 
-    state->stack = Buffer(TaggedValue, initial_stack_size);
-    state->top = state->stack + initial_stack_size;
+    state->stack = NULL;
+    state->top = NULL;
     state->current = NULL;
-
-    state->function = WoodyFunctionNew(20);
-
-    state->ip = NULL;
+    state->frames = NULL;
+    state->frame_count = 0;
+    state->frame_capacity = 0;
 
     return state;
 }
@@ -21,8 +20,6 @@ WoodyState * WoodyNewState (uint32_t initial_stack_size)
 void WoodyStateFree (WoodyState * state)
 {
     Deallocate(state->stack);
-
-    WoodyFunctionFree(state->function);
 
     Deallocate(state);
 }
