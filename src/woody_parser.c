@@ -172,12 +172,38 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
 }
 
 
-static uint32_t AddConstant (WoodyParser * parser, TaggedValue value)
+static uint32_t AddConstant (WoodyParser * parser)
 {
-    UNUSED(parser);
-    UNUSED(value);
+    if (!parser->state->function->constants)
+    {
+        parser->state->function->constants = ValueBufferNew(20);
+    }
 
-    return 0;
+    TaggedValue tvalue;
+
+    switch (Current(parser).type)
+    {
+        case TOKEN_NUMBER:
+        {
+            tvalue.value.number = Current(parser).value.number;
+            tvalue.type = WOODY_NUMBER;
+        } break;
+        case TOKEN_TRUE:
+        case TOKEN_FALSE:
+        {
+            tvalue.value.boolean = Current(parser).value.boolean;
+            tvalue.type = WOODY_BOOLEAN;
+        } break;
+        default:
+        {
+            printf("Illegal constant value.");
+            exit(1);
+        } break;
+    }
+
+    ValueBufferPush(parser->state->function->constants, tvalue);
+
+    return parser->state->function->constants->count - 1;
 }
 
 
@@ -235,11 +261,8 @@ static void VarStatement (WoodyParser * parser)
      */
     if (Match(parser, TOKEN_EQ))
     {
-        // Move to and print the equality token.
         PrintToken(parser);
 
-        // Move to token after TOKEN_EQ, which we assume is an expression.
-        // Next(parser);
         Expression(parser);
 
         PushOpArg(parser, OP_STORE, local);
@@ -285,7 +308,9 @@ static void InfixOperator (WoodyParser * parser)
 
     ParsePrecedence(parser, rule.precedence);
 
-    PushOp(parser, OP_PLUS + type);
+    uint32_t op = OP_PLUS + (type - TOKEN_PLUS);
+
+    PushOp(parser, op);
 }
 
 
@@ -299,30 +324,9 @@ static void Literal (WoodyParser * parser)
 {
     PrintToken(parser);
 
-    uint32_t constants_buffer = 0;
+    uint32_t constant = AddConstant(parser);
 
-    switch (Current(parser).type)
-    {
-        case TOKEN_NUMBER:
-        {
-
-        } break;
-        case TOKEN_TRUE:
-        case TOKEN_FALSE:
-        {
-            TaggedValue tvalue;
-            tvalue.value.number = Current(parser).value.number;
-            tvalue.type = WOODY_NUMBER;
-
-            constants_buffer = AddConstant(parser, tvalue);
-        } break;
-        default:
-        {
-            Assert(false, "Unexpected value.");
-        }
-    }
-
-    PushOpArg(parser, OP_CONSTANT, constants_buffer);
+    PushOpArg(parser, OP_CONSTANT, constant);
 }
 
 

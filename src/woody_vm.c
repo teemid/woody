@@ -10,45 +10,16 @@
 #define POP(state) --(state)->current
 #define PUSH(state, value) *(state)->current++ = (value)
 
-
-#define PUSH_NUMBER(state, number_value)             \
+#define PUSH_NUMBER(state, number_value)           \
     state->current->value.number = (number_value); \
     state->current->type = WOODY_NUMBER;           \
     ++(state)->current
-
-// void PrintInstructions(InstructionBuffer * buffer);
-
-#define PrintBuffer(name, buffer, length)                        \
-    printf("%s", #name);                                         \
-    for (uint32_t i = 0; i < (buffer)->count; i++)               \
-    {                                                            \
-        switch ((buffer)->values[i].type)                        \
-        {                                                        \
-            case WOODY_NUMBER:                                   \
-            {                                                    \
-                printf("number: %d", (buffer)->values[i].value); \
-            } break;                                             \
-            case WOODY_BOOLEAN:                                  \
-            {                                                    \
-                printf("boolean: %i", );                         \
-            } break;                                             \
-            case WOODY_FUNCTION:                                 \
-            {                                                    \
-                printf("function: %i", (buffer->values[i]));     \
-            } break;                                             \
-            default:                                             \
-            {                                                    \
-                                                                 \
-            } break;                                             \
-        }                                                        \
-    }                                                            \
-    printf("\n\n")
 
 
 static void PrintStack (WoodyState * state)
 {
     printf("Stack: ");
-    for (StackPtr i = state->stack; i <= state->current; i++)
+    for (StackPtr i = state->stack; i < state->current; i++)
     {
         switch (i->type)
         {
@@ -66,9 +37,23 @@ static void PrintStack (WoodyState * state)
             } break;
         }
     }
+
+    printf("\n");
 }
 
-static void DoArithmetic(WoodyState * state, Instruction i)
+
+static void LoadConstant (WoodyState * state, uint32_t index)
+{
+    TaggedValue value = state->function->constants->values[index];
+
+    state->current->value = value.value;
+    state->current->type = value.type;
+
+    state->current++;
+}
+
+
+static void DoArithmetic (WoodyState * state, Instruction i)
 {
     TaggedValue * a = POP(state);
     TaggedValue * b = POP(state);
@@ -110,9 +95,8 @@ static void DoArithmetic(WoodyState * state, Instruction i)
 
 void WoodyRun (WoodyState * state)
 {
-    // PrintBuffer(Constants, state->function->constants->values, state->function->constants->count);
-
     state->ip = state->function->code->values;
+    state->current = state->stack;
 
     while (*state->ip != OP_END)
     {
@@ -125,7 +109,7 @@ void WoodyRun (WoodyState * state)
             {
                 uint32_t index = *(state->ip++);
 
-                PUSH(state, state->function->constants->values[index]);
+                LoadConstant(state, index);
             } break;
             case OP_LOAD:
             {

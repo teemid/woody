@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #define Assert(expression, message) \
-    if (!(expression))              \
+    if (expression)                 \
     {                               \
         printf(message);            \
         exit(1);                    \
