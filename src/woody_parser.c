@@ -163,12 +163,12 @@ GrammarRule rules[] = {
 #define PushOp(parser, op) InstructionBufferPush(CurrentPrototype(parser)->function->code, op)
 #define PushOpArg(parser, op, argument) PushOp(parser, op); PushOp(parser, argument)
 
-#define PrintToken(parser)                 \
-    printf(                                \
-        "%.*s %s\n",                       \
-        Current(parser).length,            \
-        Current(parser).start,             \
-        woody_tokens[Current(parser).type] \
+#define PrintToken(parser)                  \
+    printf(                                 \
+        "%s %.*s\n",                        \
+        woody_tokens[Current(parser).type], \
+        Current(parser).length,             \
+        Current(parser).start               \
     )
 
 
@@ -323,6 +323,16 @@ static void FunctionStatement (WoodyParser * parser)
     PrintToken(parser);
 
     Expect(parser, TOKEN_IDENTIFIER);
+
+    printf("Got identifier.\n");
+
+    uint32_t local = AddLocalVariable(parser);
+
+    // Make new function.
+    // Parse the arguments -> make them local variables.
+    // Parse the new function.
+
+    PushOpArg(parser, OP_STORE, local);
 }
 
 
@@ -356,6 +366,11 @@ static void InfixOperator (WoodyParser * parser)
 static void Identifier (WoodyParser * parser)
 {
     PrintToken(parser); // Print the identifier token.
+
+    if (Match(parser, TOKEN_OPEN_PAREN))
+    {
+        // We have a function call.
+    }
 }
 
 

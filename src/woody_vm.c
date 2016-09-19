@@ -15,6 +15,10 @@
     state->current->type = WOODY_NUMBER;           \
     ++(state)->current
 
+#define PUSH_UNDEFINED(state) \
+    (state)->current->value.type = WOODY_UNDEFINED; \
+    ++(state)->current
+
 #define CurrentFrame(state) ((state)->frames + (state)->frame_count - 1)
 #define Constants(state) CurrentFrame(state)->function->constants
 
@@ -130,6 +134,8 @@ static void Call (WoodyState * state, WoodyFunction * function)
     frame->function = function;
     frame->ip = function->code->values;
     frame->start = state->current;
+
+
 }
 
 
@@ -169,6 +175,10 @@ void WoodyRun (WoodyState * state)
                 DoArithmetic(state, instruction);
             } break;
             case OP_CALL:
+            {
+
+            } break;
+            case OP_RETURN:
             {
 
             } break;

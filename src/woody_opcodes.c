@@ -9,5 +9,7 @@ extern const char * woody_opcodes[] = {
     "OP_CONSTANT",
     "OP_LOAD",
     "OP_STORE",
+    "OP_CALL",
+    "OP_RETURN",
     "OP_END",
 };
