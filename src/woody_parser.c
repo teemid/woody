@@ -14,6 +14,7 @@ DECLARE_TABLE(Symbol, char *, uint32_t);
 
 DEFINE_TABLE(Symbol, char *, uint32_t);
 
+
 #define HashString(key, length) djb2(key, length)
 
 

@@ -5,24 +5,9 @@
 
 typedef enum
 {
-    TOKEN_VAR,
-    TOKEN_FUNCTION,
-    TOKEN_RETURN,
-    TOKEN_END,
-    TOKEN_TRUE,
-    TOKEN_FALSE,
-    TOKEN_COMMA,
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_ASTERIX,
-    TOKEN_SLASH,
-    TOKEN_EQ,
-    TOKEN_OPEN_PAREN,
-    TOKEN_CLOSE_PAREN,
-    TOKEN_NUMBER,
-    TOKEN_IDENTIFIER,
-    TOKEN_NEWLINE,
-    TOKEN_EOF
+    #define TOKEN(token) TOKEN_##token,
+    #include "woody_tokens.h"
+    #undef TOKEN
 } WoodyTokenType;
 
 

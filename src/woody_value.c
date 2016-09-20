@@ -20,6 +20,10 @@ int32_t ValueBufferFind(ValueBuffer * buffer, TaggedValue value)
         {
             switch (buffer->values[i].type)
             {
+                case WOODY_NUMBER:
+                {
+
+                }
             }
             return i;
         }
