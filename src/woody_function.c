@@ -26,6 +26,18 @@ WoodyFunction * WoodyFunctionNew (WoodyFunction * parent)
 }
 
 
+void WoodyFunctionInitialize (WoodyFunction * function)
+{
+    function->parent = NULL;
+    function->functions = NULL;
+    function->function_count = 0;
+    function->function_capacity = 0;
+    function->constants = NULL;
+    function->code = InstructionBufferNew(20);
+    function->arity = 0;
+}
+
+
 void WoodyFunctionInitializeConstants (WoodyFunction * function)
 {
     function->constants = ValueBufferNew(20);

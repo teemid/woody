@@ -22,6 +22,7 @@ typedef struct
 {
     WoodyFunction * function;
     SymbolTable * symbols;
+    uint32_t local_variables;
 } Prototype;
 
 
@@ -36,24 +37,26 @@ typedef struct
 } WoodyParser;
 
 
-#define CompilingFunc(parser) (parser)->current;
+#define CurrentPrototype(parser) (parser)->current
 
 
-static void NewPrototype (WoodyParser * parser)
+static void NewPrototype (WoodyParser * parser, WoodyFunction * function)
 {
     // Check to see if we need to increase the capacity of the prototype buffer.
     if (parser->prototype_count == parser->prototype_capacity)
     {
-        parser->prototypes = ResizeBuffer(Prototype, parser->prototypes, parser->prototype_capacity * 2);
+        parser->prototypes = ResizeBuffer(Prototype, parser->prototypes, parser->prototype_capacity + 1);
+        parser->prototype_capacity += 1;
     }
 
     uint32_t initial_symbol_count = 20;
 
-    WoodyFunction * parent = parser->current->function;
+    WoodyFunction * parent = CurrentPrototype(parser)->function;
 
     Prototype * prototype = parser->prototypes + parser->prototype_count++;
     prototype->symbols = SymbolTableNew(initial_symbol_count);
-    prototype->function = WoodyFunctionNew(parent);
+    prototype->local_variables = 0;
+    prototype->function = function;
     prototype->function->parent = parent;
 }
 
@@ -158,7 +161,7 @@ GrammarRule rules[] = {
 #define Current(parser) (parser)->lexer->current
 #define Lookahead(parser) (parser)->lexer->lookahead
 
-#define CurrentPrototype(parser) ((parser)->prototypes + (parser)->prototype_count - 1)
+#define CurrentPrototype(parser) (parser)->current
 #define Constants(parser) (CurrentPrototype(parser)->function->constants)
 
 #define PushOp(parser, op) InstructionBufferPush(CurrentPrototype(parser)->function->code, op)
@@ -208,7 +211,7 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
 {
     Prototype * prototype = CurrentPrototype(parser);
 
-    uint32_t local = prototype->symbols->count;
+    uint32_t local = prototype->local_variables++;
     uint32_t length = Current(parser).length;
 
     char * key = (char *)Allocate(length);
@@ -219,6 +222,39 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
     SymbolTableAdd(prototype->symbols, key, hash, local);
 
     return local;
+}
+
+
+static uint32_t AddFunction (WoodyParser * parser)
+{
+    WoodyFunction * function = CurrentPrototype(parser)->function;
+
+    if (!function->functions)
+    {
+        function->functions = Buffer(WoodyFunction, 1);
+        function->function_count = 0;
+        function->function_capacity = 1;
+    }
+    else if (function->function_count == function->function_capacity)
+    {
+        function->functions = ResizeBuffer(WoodyFunction, function->functions, function->function_capacity + 1);
+        function->function_capacity += 1;
+    }
+
+    uint32_t function_index = function->function_count++;
+
+    WoodyFunctionInitialize(function->functions + function_index);
+
+    // NOTE (Emil): Add the symbol to the prototype so we can look it up later.
+    uint32_t bytes = Current(parser).length * sizeof(char);
+    char * key = (char *)Allocate(bytes);
+    memcpy(key, Current(parser).start, bytes);
+
+    uint32_t hash = HashString(key, Current(parser).length);
+
+    SymbolTableAdd(CurrentPrototype(parser)->symbols, key, hash, function_index);
+
+    return function_index;
 }
 
 
@@ -325,15 +361,24 @@ static void FunctionStatement (WoodyParser * parser)
 
     Expect(parser, TOKEN_IDENTIFIER);
 
-    printf("Got identifier.\n");
+    uint32_t index = AddFunction(parser);
+    WoodyFunction * function = CurrentPrototype(parser)->function->functions + index;
 
-    uint32_t local = AddLocalVariable(parser);
+    NewPrototype(parser, function);
 
-    // Make new function.
-    // Parse the arguments -> make them local variables.
-    // Parse the new function.
+    Expect(parser, TOKEN_OPEN_PAREN);
 
-    PushOpArg(parser, OP_STORE, local);
+    while (!Match(parser, TOKEN_CLOSE_PAREN))
+    {
+        Expression(parser);
+
+        Match(parser, TOKEN_COMMA);
+    }
+
+    // Parse the function body.
+
+    // The function body is closed out with the end keyword.
+    Expect(parser, TOKEN_END);
 }
 
 

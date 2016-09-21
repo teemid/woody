@@ -25,6 +25,7 @@ typedef struct WoodyFunction
 
 
 WoodyFunction * WoodyFunctionNew (WoodyFunction * parent);
+void WoodyFunctionInitialize (WoodyFunction * function);
 void WoodyFunctionSetParent (WoodyFunction * function, WoodyFunction * parent);
 void WoodyFunctionInitializeConstants (WoodyFunction * function);
 void WoodyFunctionFree (WoodyFunction * function);
