@@ -84,7 +84,7 @@
     void name##TableRemove (name##Table * table, uint32_t hash)
 
 
-uint32_t djb2(char * key, size_t length);
+uint32_t djb2(const char * key, size_t length);
 
 
 #define INVALID_HASH 0

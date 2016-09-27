@@ -1,7 +1,7 @@
 #include "woody_opcodes.h"
 
 
-extern const char * woody_opcodes[] = {
+const char * woody_opcodes[] = {
     "OP_PLUS",
     "OP_MINUS",
     "OP_MULT",

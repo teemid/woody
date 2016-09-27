@@ -2,20 +2,30 @@
 #include <string.h>
 
 #include "woody_common.h"
+#include "woody_function.h"
+#include "woody_lexer.h"
 #include "woody_memory.h"
 #include "woody_opcodes.h"
 #include "woody_parser.h"
+#include "woody_state.h"
 #include "woody_utils.h"
+#include "woody_value.h"
 
 #define UNUSED(ptr) (void)(ptr)
 
-
-DECLARE_TABLE(Symbol, char *, uint32_t);
-
-DEFINE_TABLE(Symbol, char *, uint32_t);
-
-
 #define HashString(key, length) djb2(key, length)
+
+
+typedef struct
+{
+    uint32_t is_upvalue;
+    uint32_t slot;
+} Local;
+
+
+DECLARE_TABLE(Symbol, const char *, uint32_t);
+
+DEFINE_TABLE(Symbol, const char *, uint32_t);
 
 
 typedef struct
@@ -34,15 +44,21 @@ typedef struct
     Prototype * current;
     uint32_t prototype_count;
     uint32_t prototype_capacity;
-} WoodyParser;
+} Parser;
 
 
 #define CurrentPrototype(parser) (parser)->current
 
 
-static void NewPrototype (WoodyParser * parser, WoodyFunction * function)
+static void EnsurePrototypeBuffer (Parser * parser)
 {
-    // Check to see if we need to increase the capacity of the prototype buffer.
+    UNUSED(parser);
+}
+
+
+static Prototype * NewPrototype (Parser * parser, WoodyFunction * function)
+{
+    /* Check to see if we need to increase the capacity of the prototype buffer. */
     if (parser->prototype_count == parser->prototype_capacity)
     {
         parser->prototypes = ResizeBuffer(Prototype, parser->prototypes, parser->prototype_capacity + 1);
@@ -51,19 +67,18 @@ static void NewPrototype (WoodyParser * parser, WoodyFunction * function)
 
     uint32_t initial_symbol_count = 20;
 
-    WoodyFunction * parent = CurrentPrototype(parser)->function;
-
     Prototype * prototype = parser->prototypes + parser->prototype_count++;
     prototype->symbols = SymbolTableNew(initial_symbol_count);
     prototype->local_variables = 0;
     prototype->function = function;
-    prototype->function->parent = parent;
+
+    return prototype;
 }
 
 
-WoodyParser * WoodyParserNew (WoodyState * state, WoodyLexer * lexer)
+static Parser * NewParser (WoodyState * state, WoodyLexer * lexer)
 {
-    WoodyParser * parser = (WoodyParser *)Allocate(sizeof(WoodyParser));
+    Parser * parser = (Parser *)Allocate(sizeof(Parser));
     parser->lexer = lexer;
     parser->state = state;
 
@@ -72,35 +87,40 @@ WoodyParser * WoodyParserNew (WoodyState * state, WoodyLexer * lexer)
     parser->prototype_count = 0;
     parser->prototype_capacity = initial_prototype_count;
 
-    // TODO: Initialize 'main' function.
+    /* TODO: Initialize 'main' function. */
     parser->current = parser->prototypes + parser->prototype_count++;
-    parser->current->function = WoodyFunctionNew(NULL);
+    parser->current->function = WoodyFunctionNew(state, NULL);
     parser->current->symbols = SymbolTableNew(20);
 
-    // Save the function in state.
+    /* Save the function in state. */
     parser->state->functions = parser->current->function;
 
     return parser;
+}
+
+static void FreeParser (Parser * parser)
+{
+    UNUSED(parser);
 }
 
 
 typedef enum
 {
     PRECEDENCE_NONE,
-    PRECEDENCE_LOWEST,      // Sentinel
-    PRECEDENCE_ASSIGNMENT,  // =
-    PRECEDENCE_LOGICAL_OR,  // ||
-    PRECEDENCE_LOGICAL_AND, // &&
-    PRECEDENCE_EQUALITY,    // == !=
-    PRECEDENCE_COMPARISON,  // < > <= >=
-    PRECEDENCE_TERM,        // + -
-    PRECEDENCE_FACTOR,      // * /
-    PRECEDENCE_UNARY,       // - !
-    PRECEDENCE_CALL,        // . () [] {}
+    PRECEDENCE_LOWEST,      /* Sentinel */
+    PRECEDENCE_ASSIGNMENT,  /* = */
+    PRECEDENCE_LOGICAL_OR,  /* || */
+    PRECEDENCE_LOGICAL_AND, /* && */
+    PRECEDENCE_EQUALITY,    /* == != */
+    PRECEDENCE_COMPARISON,  /* < > <= >= */
+    PRECEDENCE_TERM,        /* + - */
+    PRECEDENCE_FACTOR,      /* * / */
+    PRECEDENCE_UNARY,       /* - ! */
+    PRECEDENCE_CALL,        /* . () [] {} */
 } Precedence;
 
 
-typedef void (* GrammarFn) (WoodyParser * parser);
+typedef void (* GrammarFn) (Parser * parser);
 
 
 typedef struct
@@ -112,16 +132,16 @@ typedef struct
 } GrammarRule;
 
 
-static void ParsePrecedence   (WoodyParser * parser, Precedence precedence);
-static void UnaryOperator     (WoodyParser * parser);
-static void Expression        (WoodyParser * parser);
-static void InfixOperator     (WoodyParser * parser);
-static void VarStatement      (WoodyParser * parser);
-static void FunctionStatement (WoodyParser * parser);
-static void ReturnStatement   (WoodyParser * parser);
-static void Identifier        (WoodyParser * parser);
-static void OpenParen         (WoodyParser * parser);
-static void Literal           (WoodyParser * parser);
+static void ParsePrecedence   (Parser * parser, Precedence precedence);
+static void UnaryOperator     (Parser * parser);
+static void Expression        (Parser * parser);
+static void InfixOperator     (Parser * parser);
+static void VarStatement      (Parser * parser);
+static void FunctionStatement (Parser * parser);
+static void ReturnStatement   (Parser * parser);
+static void Identifier        (Parser * parser);
+static void OpenParen         (Parser * parser);
+static void Literal           (Parser * parser);
 
 
 #define NO_RULE                          { NULL,          NULL,          PRECEDENCE_NONE, NULL }
@@ -132,7 +152,7 @@ static void Literal           (WoodyParser * parser);
 #define OPERATOR(name)                   { UnaryOperator, InfixOperator, PRECEDENCE_TERM, name }
 
 
-// NOTE (Emil): Each rule is associated with a token.
+/* NOTE (Emil): Each rule is associated with a token. */
 GrammarRule rules[] = {
     /* TOKEN_VAR         */ PREFIX(VarStatement),
     /* TOKEN_FUNCTION    */ PREFIX(FunctionStatement),
@@ -171,12 +191,12 @@ GrammarRule rules[] = {
     printf(                                 \
         "%s %.*s\n",                        \
         woody_tokens[Current(parser).type], \
-        Current(parser).length,             \
+        (int)Current(parser).length,        \
         Current(parser).start               \
     )
 
 
-static bool Match (WoodyParser * parser, WoodyTokenType match)
+static bool Match (Parser * parser, WoodyTokenType match)
 {
     if (Peek(parser) == match)
     {
@@ -188,7 +208,7 @@ static bool Match (WoodyParser * parser, WoodyTokenType match)
 }
 
 
-static void Expect(WoodyParser * parser, WoodyTokenType expected)
+static void Expect(Parser * parser, WoodyTokenType expected)
 {
     if (!Match(parser, expected))
     {
@@ -198,7 +218,7 @@ static void Expect(WoodyParser * parser, WoodyTokenType expected)
 }
 
 
-static void IgnoreNewLines (WoodyParser * parser)
+static void IgnoreNewLines (Parser * parser)
 {
     while (Match(parser, TOKEN_NEWLINE))
     {
@@ -207,7 +227,7 @@ static void IgnoreNewLines (WoodyParser * parser)
 }
 
 
-static uint32_t AddLocalVariable (WoodyParser * parser)
+static uint32_t AddLocalVariable (Parser * parser)
 {
     Prototype * prototype = CurrentPrototype(parser);
 
@@ -225,89 +245,50 @@ static uint32_t AddLocalVariable (WoodyParser * parser)
 }
 
 
-static uint32_t AddFunction (WoodyParser * parser)
+static uint32_t AddConstant (Parser * parser, TaggedValue tvalue)
 {
-    WoodyFunction * function = CurrentPrototype(parser)->function;
-
-    if (!function->functions)
-    {
-        function->functions = Buffer(WoodyFunction, 1);
-        function->function_count = 0;
-        function->function_capacity = 1;
-    }
-    else if (function->function_count == function->function_capacity)
-    {
-        function->functions = ResizeBuffer(WoodyFunction, function->functions, function->function_capacity + 1);
-        function->function_capacity += 1;
-    }
-
-    uint32_t function_index = function->function_count++;
-
-    WoodyFunctionInitialize(function->functions + function_index);
-
-    // NOTE (Emil): Add the symbol to the prototype so we can look it up later.
-    uint32_t bytes = Current(parser).length * sizeof(char);
-    char * key = (char *)Allocate(bytes);
-    memcpy(key, Current(parser).start, bytes);
-
-    uint32_t hash = HashString(key, Current(parser).length);
-
-    SymbolTableAdd(CurrentPrototype(parser)->symbols, key, hash, function_index);
-
-    return function_index;
-}
-
-
-static uint32_t AddConstant (WoodyParser * parser)
-{
-    if (!Constants(parser))
-    {
-        WoodyFunctionInitializeConstants(CurrentPrototype(parser)->function);
-    }
-
-    TaggedValue tvalue;
-
-    switch (Current(parser).type)
-    {
-        case TOKEN_NUMBER:
-        {
-            tvalue.value.number = Current(parser).value.number;
-            tvalue.type = WOODY_NUMBER;
-        } break;
-        case TOKEN_TRUE:
-        case TOKEN_FALSE:
-        {
-            tvalue.value.boolean = Current(parser).value.boolean;
-            tvalue.type = WOODY_BOOLEAN;
-        } break;
-        default:
-        {
-            printf("Illegal constant value.");
-            exit(1);
-        } break;
-    }
-
     ValueBufferPush(Constants(parser), tvalue);
 
     return Constants(parser)->count - 1;
 }
 
 
-static void Statement (WoodyParser * parser)
+static uint32_t AddFunction (Parser * parser)
 {
-    GrammarFn prefix = rules[Current(parser).type].prefix;
+    WoodyFunction * parent = CurrentPrototype(parser)->function;
+    WoodyFunction * function = WoodyFunctionNew(parser->state, parent);
 
-    if (!prefix)
+    if (!parent->functions)
     {
-        printf("Expected prefix!\n");
-        exit(1);
+        function->functions = (WoodyFunction **)Allocate(sizeof(WoodyFunction *));
+        function->function_count = 0;
+        function->function_capacity = 1;
+    }
+    else if (function->function_count == function->function_capacity)
+    {
+        size_t new_size = sizeof(WoodyFunction *) * function->function_capacity + 1;
+        function->functions = Reallocate(function->functions, new_size);
+        function->function_capacity += 1;
     }
 
-    prefix(parser);
+    TaggedValue function_value = MakeFunction(function);
+
+    uint32_t local = AddConstant(parser, function_value);
+
+    /* NOTE (Emil): Add the symbol to the prototype so we can look it up later. */
+    uint32_t bytes = Current(parser).length;
+    char * key = (char *)Allocate(bytes);
+    memcpy((void *)key, (void *)Current(parser).start, bytes);
+
+    uint32_t hash = HashString(key, Current(parser).length);
+
+    SymbolTableAdd(CurrentPrototype(parser)->symbols, key, hash, local);
+
+    return local;
 }
 
 
-static void OpenParen (WoodyParser * parser)
+static void OpenParen (Parser * parser)
 {
     PrintToken(parser);
 
@@ -319,19 +300,19 @@ static void OpenParen (WoodyParser * parser)
 }
 
 
-static void Expression (WoodyParser * parser)
+static void Expression (Parser * parser)
 {
     ParsePrecedence(parser, PRECEDENCE_LOWEST);
 }
 
 
-static void VarStatement (WoodyParser * parser)
+static void VarStatement (Parser * parser)
 {
-    PrintToken(parser); // Print var
+    PrintToken(parser); /* Print var */
 
     Expect(parser, TOKEN_IDENTIFIER);
 
-    PrintToken(parser); // Print identifier
+    PrintToken(parser); /* Print identifier */
 
     uint32_t local = AddLocalVariable(parser);
 
@@ -346,57 +327,55 @@ static void VarStatement (WoodyParser * parser)
 }
 
 
-static void ParseFunctionParameters (WoodyParser * parser)
+static Prototype * CreateFunction (Parser * parser)
 {
-    while (Match(parser, TOKEN_COMMA))
-    {
+    WoodyFunction * parent = CurrentPrototype(parser)->function;
+    WoodyFunction * new = WoodyFunctionNew(parser->state, parent);
 
-    }
+    Prototype * prototype = NewPrototype(parser, new);
+
+    return prototype;
 }
 
 
-static void FunctionStatement (WoodyParser * parser)
+static void FunctionStatement (Parser * parser)
 {
     PrintToken(parser);
 
     Expect(parser, TOKEN_IDENTIFIER);
 
-    uint32_t index = AddFunction(parser);
-    WoodyFunction * function = CurrentPrototype(parser)->function->functions + index;
+    /* Create a function and prototype for the parser. */
+    Prototype * prototype = CreateFunction(parser);
+    uint32_t local = AddLocalVariable(parser);
+    uint32_t constant = AddConstant(parser, MakeFunction(prototype->function));
 
-    NewPrototype(parser, function);
+    UNUSED(local);
+    UNUSED(constant);
 
     Expect(parser, TOKEN_OPEN_PAREN);
 
-    while (!Match(parser, TOKEN_CLOSE_PAREN))
-    {
-        Expression(parser);
+    /* Parse the function body. */
 
-        Match(parser, TOKEN_COMMA);
-    }
-
-    // Parse the function body.
-
-    // The function body is closed out with the end keyword.
+    /* The function body is closed out with the end keyword. */
     Expect(parser, TOKEN_END);
 }
 
 
-static void ReturnStatement (WoodyParser * parser)
+static void ReturnStatement (Parser * parser)
 {
     UNUSED(parser);
 }
 
 
-static void UnaryOperator (WoodyParser * parser)
+static void UnaryOperator (Parser * parser)
 {
     UNUSED(parser);
 }
 
 
-static void InfixOperator (WoodyParser * parser)
+static void InfixOperator (Parser * parser)
 {
-    PrintToken(parser); // Print the operator.
+    PrintToken(parser); /* Print the operator. */
 
     uint32_t type = Current(parser).type;
     GrammarRule rule = rules[type];
@@ -409,28 +388,30 @@ static void InfixOperator (WoodyParser * parser)
 }
 
 
-static void Identifier (WoodyParser * parser)
+static void Identifier (Parser * parser)
 {
-    PrintToken(parser); // Print the identifier token.
+    PrintToken(parser); /* Print the identifier token. */
 
     if (Match(parser, TOKEN_OPEN_PAREN))
     {
-        // We have a function call.
+        /* We have a function call. */
     }
 }
 
 
-static void Literal (WoodyParser * parser)
+static void Literal (Parser * parser)
 {
     PrintToken(parser);
 
-    uint32_t constant = AddConstant(parser);
+    TaggedValue tvalue = MakeNumber(Current(parser).value.number);
 
-    PushOpArg(parser, OP_CONSTANT, constant);
+    uint32_t constant = AddConstant(parser, tvalue);
+
+    PushOpArg(parser, OP_LOAD_CONSTANT, constant);
 }
 
 
-static void ParsePrecedence (WoodyParser * parser, Precedence precedence)
+static void ParsePrecedence (Parser * parser, Precedence precedence)
 {
     GrammarFn prefix = rules[Next(parser)].prefix;
 
@@ -459,7 +440,7 @@ static void ParsePrecedence (WoodyParser * parser, Precedence precedence)
 
 void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 {
-    WoodyParser * parser = WoodyParserNew(state, lexer);
+    Parser * parser = NewParser(state, lexer);
 
     IgnoreNewLines(parser);
 
@@ -477,5 +458,5 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 
     PushOp(parser, OP_END);
 
-    // TODO (Emil): Clean up the parser.
+    FreeParser(parser);
 }

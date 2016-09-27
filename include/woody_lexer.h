@@ -1,13 +1,14 @@
 #ifndef WOODY_LEXER_H
 #define WOODY_LEXER_H
 
+
 #include "woody_common.h"
+
 
 typedef enum
 {
-    #define TOKEN(token) TOKEN_##token,
-    #include "woody_tokens.h"
-    #undef TOKEN
+    #define TOKEN(t) TOKEN_##t,
+    #include "woody_tokens.def"
 } WoodyTokenType;
 
 
@@ -29,7 +30,7 @@ typedef struct
 } WoodyToken;
 
 
-typedef struct
+typedef struct WoodyLexer
 {
     char * input;
     uint32_t linenumber;

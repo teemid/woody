@@ -1,8 +1,10 @@
 #include "stdio.h"
 
 #include "woody_common.h"
-#include "woody_opcodes.h"
+#include "woody_function.h"
 #include "woody_memory.h"
+#include "woody_opcodes.h"
+#include "woody_state.h"
 #include "woody_value.h"
 #include "woody_vm.h"
 
@@ -10,9 +12,8 @@
 #define POP(state) --(state)->current
 #define PUSH(state, value) *(state)->current++ = (value)
 
-#define PUSH_NUMBER(state, number_value)           \
-    state->current->value.number = (number_value); \
-    state->current->type = WOODY_NUMBER;           \
+#define PUSH_NUMBER(state, number_value)       \
+    *state->current = MakeNumber(number_value); \
     ++(state)->current
 
 #define PUSH_UNDEFINED(state) \
@@ -30,13 +31,17 @@ static void PrintStack (WoodyState * state)
     {
         switch (i->type)
         {
-            case WOODY_NUMBER:
+            case TYPE_NUMBER:
             {
                 printf("%f ", i->value.number);
             } break;
-            case WOODY_BOOLEAN:
+            case TYPE_FALSE:
             {
-                printf("%i ", i->value.boolean);
+                printf("false");
+            } break;
+            case TYPE_TRUE:
+            {
+                printf("true");
             } break;
             default:
             {
@@ -74,10 +79,7 @@ static void DoArithmetic (WoodyState * state, Instruction i)
     TaggedValue * a = POP(state);
     TaggedValue * b = POP(state);
 
-    Assert(
-        a->type != WOODY_NUMBER || b->type != WOODY_NUMBER,
-        "Trying arithmetic on non-number types"
-    );
+    Assert(!IsNumber(a) || !IsNumber(b), "Trying arithmetic on non-number types");
 
     double result = 0;
 
@@ -143,7 +145,7 @@ void WoodyRun (WoodyState * state)
 {
     InitializeStack(state, 20);
     AllocateCallFrames(state);
-    // Call the 'main' function.
+    /* Call the 'main' function. */
     Call(state, state->functions);
 
     while (*CurrentFrame(state)->ip != OP_END)
@@ -153,7 +155,7 @@ void WoodyRun (WoodyState * state)
 
         switch (instruction)
         {
-            case OP_CONSTANT:
+            case OP_LOAD_CONSTANT:
             {
                 uint32_t index = *CurrentFrame(state)->ip++;
 
@@ -185,5 +187,6 @@ void WoodyRun (WoodyState * state)
         }
 
         PrintStack(state);
+        CheckStack(state);
     }
 }

@@ -1,7 +1,8 @@
 #ifndef WOODY_VM_H
 #define WOODY_VM_H
 
-#include "woody_state.h"
+
+typedef struct WoodyState WoodyState;
 
 
 void WoodyRun(WoodyState * state);

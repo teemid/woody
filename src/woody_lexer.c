@@ -7,9 +7,8 @@
 
 const char * woody_tokens[] = {
     #define STR(s) #s
-    #define TOKEN(token) STR(TOKEN_##token),
-    #include "woody_tokens.h"
-    #undef TOKEN
+    #define TOKEN(t) STR(TOKEN_##t),
+    #include "woody_tokens.def"
     #undef STR
 };
 
@@ -132,7 +131,7 @@ static void Lex (WoodyLexer * lexer)
             {
                 char * start = lexer->input + lexer->position;
 
-                while ('0' <= c && c <= '9' || c == '.')
+                while (('0' <= c && c <= '9') || c == '.')
                 {
                     lexer->position++;
                     lexer->column_number++;

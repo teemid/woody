@@ -1,12 +1,12 @@
 #include <stdio.h>
 
+#include "woody_memory.h"
+#include "woody_opcodes.h"
 #include "woody_state.h"
 #include "woody_utils.h"
-#include "woody_opcodes.h"
-#include "woody_memory.h"
 
 
-uint32_t djb2 (char * key, size_t length)
+uint32_t djb2 (const char * key, size_t length)
 {
     uint32_t hash = 5381;
 
