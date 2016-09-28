@@ -4,18 +4,8 @@
 
 typedef enum
 {
-    OP_PLUS,
-    OP_MINUS,
-    OP_MULT,
-    OP_DIV,
-    OP_LOAD_CONSTANT,
-    OP_LOAD_TRUE,
-    OP_LOAD_FALSE,
-    OP_LOAD,
-    OP_STORE,
-    OP_CALL,
-    OP_RETURN,
-    OP_END,
+    #define OP(name) OP_##name,
+    #include "woody_opcodes.def"
 } Opcode;
 
 

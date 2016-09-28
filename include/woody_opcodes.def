@@ -1,0 +1,20 @@
+#ifndef OP
+#define OP(name)
+#endif
+
+
+OP(PLUS)
+OP(MINUS)
+OP(MULT)
+OP(DIV)
+OP(LOAD_CONSTANT)
+OP(LOAD_TRUE)
+OP(LOAD_FALSE)
+OP(LOAD)
+OP(STORE)
+OP(CALL)
+OP(RETURN)
+OP(END)
+
+
+#undef OP
