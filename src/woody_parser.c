@@ -399,7 +399,7 @@ static void Identifier (Parser * parser)
 
     uint32_t hash = HashString(Current(parser).start, Current(parser).length);
 
-    uint32_t local = CurrentPrototype(parser)->symbols->nodes - SymbolTableFind(CurrentPrototype(parser)->symbols, hash);
+    uint32_t local = SymbolTableFind(CurrentPrototype(parser)->symbols, hash)->value;
 
     PushOpArg(parser, OP_LOAD, local);
 }
