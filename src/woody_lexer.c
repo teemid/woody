@@ -21,12 +21,8 @@ typedef struct
 
 
 Keyword keywords[] = {
-    { "var",      3 },
-    { "function", 8 },
-    { "return",   6 },
-    { "end",      3 },
-    { "true",     4 },
-    { "false",    5 },
+    #define KEYWORD(kw, str, length) { #str, length },
+    #include "woody_tokens.def"
 };
 
 

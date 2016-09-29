@@ -3,15 +3,15 @@
 #endif
 
 #ifndef KEYWORD
-#define KEYWORD(kw) TOKEN(kw)
+#define KEYWORD(kw, string, length) TOKEN(kw)
 #endif
 
-KEYWORD(VAR)
-KEYWORD(FUNCTION)
-KEYWORD(RETURN)
-KEYWORD(END)
-KEYWORD(TRUE)
-KEYWORD(FALSE)
+KEYWORD(VAR, var, 3)
+KEYWORD(FUNCTION, function, 8)
+KEYWORD(RETURN, return, 6)
+KEYWORD(END, end, 3)
+KEYWORD(TRUE, true, 4)
+KEYWORD(FALSE, false, 5)
 
 TOKEN(COMMA)
 TOKEN(PLUS)

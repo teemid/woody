@@ -52,18 +52,18 @@ typedef struct
 
 static void EnsurePrototypeBuffer (Parser * parser)
 {
-    UNUSED(parser);
+    if (parser->prototype_count == parser->prototype_capacity)
+    {
+        uint32_t new_capacity = parser->prototype_capacity;
+        parser->prototypes = ResizeBuffer(Prototype, parser->prototypes, new_capacity);
+    }
 }
 
 
 static Prototype * NewPrototype (Parser * parser, WoodyFunction * function)
 {
     /* Check to see if we need to increase the capacity of the prototype buffer. */
-    if (parser->prototype_count == parser->prototype_capacity)
-    {
-        parser->prototypes = ResizeBuffer(Prototype, parser->prototypes, parser->prototype_capacity + 1);
-        parser->prototype_capacity += 1;
-    }
+    EnsurePrototypeBuffer(parser);
 
     uint32_t initial_symbol_count = 20;
 
@@ -392,13 +392,7 @@ static void Identifier (Parser * parser)
 {
     PrintToken(parser); /* Print the identifier token. */
 
-    if (Match(parser, TOKEN_OPEN_PAREN))
-    {
-        /* We have a function call. */
-    }
-
     uint32_t hash = HashString(Current(parser).start, Current(parser).length);
-
     uint32_t local = SymbolTableFind(CurrentPrototype(parser)->symbols, hash)->value;
 
     PushOpArg(parser, OP_LOAD, local);
