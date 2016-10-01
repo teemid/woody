@@ -79,7 +79,7 @@ static void DoArithmetic (WoodyState * state, Instruction i)
     TaggedValue * a = POP(state);
     TaggedValue * b = POP(state);
 
-    Assert(!IsNumber(a) || !IsNumber(b), "Trying arithmetic on non-number types");
+    Assert(IsNumber(a) && IsNumber(b), "Trying arithmetic on non-number types");
 
     double result = 0;
 

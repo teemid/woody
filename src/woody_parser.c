@@ -23,9 +23,9 @@ typedef struct
 } Local;
 
 
-DECLARE_TABLE(Symbol, const char *, uint32_t);
+DECLARE_TABLE(Symbol, const char *, int32_t);
 
-DEFINE_TABLE(Symbol, const char *, uint32_t);
+DEFINE_TABLE(Symbol, const char *, int32_t);
 
 
 typedef struct
@@ -213,20 +213,18 @@ static bool Match (Parser * parser, WoodyTokenType match)
 
 static void Expect(Parser * parser, WoodyTokenType expected)
 {
-    if (!Match(parser, expected))
-    {
-        printf("Expected %s but got %s\n", woody_tokens[expected], woody_tokens[Current(parser).type]);
-        exit(1);
-    }
+    Assert(
+        Match(parser, expected),
+        "Expected %s but got %s\n",
+        woody_tokens[expected],
+        woody_tokens[Current(parser).type]
+    );
 }
 
 
 static void IgnoreNewLines (Parser * parser)
 {
-    while (Match(parser, TOKEN_NEWLINE))
-    {
-        Next(parser);
-    }
+    while (Match(parser, TOKEN_NEWLINE)) { }
 }
 
 
@@ -299,7 +297,6 @@ static Prototype * CreateFunction (Parser * parser)
 {
     WoodyFunction * parent = CurrentPrototype(parser)->function;
     WoodyFunction * new = WoodyFunctionNew(parser->state, parent);
-
     Prototype * prototype = NewPrototype(parser, new);
 
     return prototype;
@@ -367,11 +364,16 @@ static void FunctionStatement (Parser * parser)
     }
 
     /* The function body is closed out with the end keyword. */
-    Expect(parser, TOKEN_END);
+    PrintToken(parser);
 
-    PopPrototype(parser);
+    Assert(
+        Current(parser).type == TOKEN_END,
+        "Expected TOKEN_END but got %s\n",
+        woody_tokens[Current(parser).type]
+    );
 
     // Change back to the parent prototype.
+    PopPrototype(parser);
 
     PushOpArg(parser, OP_LOAD_CONSTANT, constant);
     PushOpArg(parser, OP_STORE, local);
