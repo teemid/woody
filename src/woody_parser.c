@@ -98,6 +98,9 @@ static Parser * NewParser (WoodyState * state, WoodyLexer * lexer)
     return parser;
 }
 
+#define PushPrototype(parser) parser->current = parser->current + 1
+#define PopPrototype(parser) parser->current = parser->current - 1
+
 static void FreeParser (Parser * parser)
 {
     UNUSED(parser);
@@ -212,7 +215,7 @@ static void Expect(Parser * parser, WoodyTokenType expected)
 {
     if (!Match(parser, expected))
     {
-        printf("Expected %s but got %s", woody_tokens[expected], woody_tokens[Current(parser).type]);
+        printf("Expected %s but got %s\n", woody_tokens[expected], woody_tokens[Current(parser).type]);
         exit(1);
     }
 }
@@ -250,41 +253,6 @@ static uint32_t AddConstant (Parser * parser, TaggedValue tvalue)
     ValueBufferPush(Constants(parser), tvalue);
 
     return Constants(parser)->count - 1;
-}
-
-
-static uint32_t AddFunction (Parser * parser)
-{
-    WoodyFunction * parent = CurrentPrototype(parser)->function;
-    WoodyFunction * function = WoodyFunctionNew(parser->state, parent);
-
-    if (!parent->functions)
-    {
-        function->functions = (WoodyFunction **)Allocate(sizeof(WoodyFunction *));
-        function->function_count = 0;
-        function->function_capacity = 1;
-    }
-    else if (function->function_count == function->function_capacity)
-    {
-        size_t new_size = sizeof(WoodyFunction *) * function->function_capacity + 1;
-        function->functions = Reallocate(function->functions, new_size);
-        function->function_capacity += 1;
-    }
-
-    TaggedValue function_value = MakeFunction(function);
-
-    uint32_t local = AddConstant(parser, function_value);
-
-    /* NOTE (Emil): Add the symbol to the prototype so we can look it up later. */
-    uint32_t bytes = Current(parser).length;
-    char * key = (char *)Allocate(bytes);
-    memcpy((void *)key, (void *)Current(parser).start, bytes);
-
-    uint32_t hash = HashString(key, Current(parser).length);
-
-    SymbolTableAdd(CurrentPrototype(parser)->symbols, key, hash, local);
-
-    return local;
 }
 
 
@@ -338,32 +306,85 @@ static Prototype * CreateFunction (Parser * parser)
 }
 
 
+static void ParseFunctionArguments (Parser * parser)
+{
+    Prototype * proto = CurrentPrototype(parser);
+
+    Expect(parser, TOKEN_OPEN_PAREN);
+
+    PrintToken(parser);
+
+    int32_t arg = -1;
+
+    do {
+        Expect(parser, TOKEN_IDENTIFIER);
+
+        PrintToken(parser);
+        // Add identifier as argument and local variable.
+        uint32_t length = Current(parser).length;
+        char * argname = (char *)Allocate(length * sizeof(char));
+        memcpy(argname, Current(parser).start, length * sizeof(char));
+
+        uint32_t hash = HashString(argname, length);
+
+        SymbolTableAdd(proto->symbols, argname, hash, arg--);
+    } while (Match(parser, TOKEN_COMMA));
+
+    Expect(parser, TOKEN_CLOSE_PAREN);
+
+    PrintToken(parser);
+}
+
+
 static void FunctionStatement (Parser * parser)
 {
     PrintToken(parser);
 
     Expect(parser, TOKEN_IDENTIFIER);
 
+    PrintToken(parser);
+
     /* Create a function and prototype for the parser. */
     Prototype * prototype = CreateFunction(parser);
+    // Add a local variable to the current scope.
     uint32_t local = AddLocalVariable(parser);
+    // Add a function reference so we have some where to refer to when
+    // we load the function to a variable and if we want to assign it to
+    // another variable later.
     uint32_t constant = AddConstant(parser, MakeFunction(prototype->function));
 
-    UNUSED(local);
-    UNUSED(constant);
+    // Change to compiling the new function.
+    PushPrototype(parser);
+    ParseFunctionArguments(parser);
 
-    Expect(parser, TOKEN_OPEN_PAREN);
+    IgnoreNewLines(parser);
 
-    /* Parse the function body. */
+    while (!Match(parser, TOKEN_END))
+    {
+        ParsePrecedence(parser, PRECEDENCE_NONE);
+
+        Expect(parser, TOKEN_NEWLINE);
+    }
 
     /* The function body is closed out with the end keyword. */
     Expect(parser, TOKEN_END);
+
+    PopPrototype(parser);
+
+    // Change back to the parent prototype.
+
+    PushOpArg(parser, OP_LOAD_CONSTANT, constant);
+    PushOpArg(parser, OP_STORE, local);
 }
 
 
 static void ReturnStatement (Parser * parser)
 {
-    UNUSED(parser);
+    PrintToken(parser);
+
+    Expression(parser);
+
+    PushOp(parser, OP_RETURN);
 }
 
 
@@ -448,10 +469,7 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
     {
         ParsePrecedence(parser, PRECEDENCE_NONE);
 
-        if (!Match(parser, TOKEN_NEWLINE))
-        {
-            Expect(parser, TOKEN_NEWLINE);
-        }
+        Expect(parser, TOKEN_NEWLINE);
     }
 
     PrintToken(parser);
