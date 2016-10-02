@@ -19,6 +19,7 @@ WoodyFunction * WoodyFunctionNew (WoodyState * state, WoodyFunction * parent)
     function->function_capacity = 0;
     function->constants = ValueBufferNew(4);
     function->code = InstructionBufferNew(20);
+    function->local_variables = 0;
     function->arity = 0;
 
     return function;

@@ -32,7 +32,6 @@ typedef struct
 {
     WoodyFunction * function;
     SymbolTable * symbols;
-    uint32_t local_variables;
 } Prototype;
 
 
@@ -69,7 +68,6 @@ static Prototype * NewPrototype (Parser * parser, WoodyFunction * function)
 
     Prototype * prototype = parser->prototypes + parser->prototype_count++;
     prototype->symbols = SymbolTableNew(initial_symbol_count);
-    prototype->local_variables = 0;
     prototype->function = function;
 
     return prototype;
@@ -232,7 +230,7 @@ static uint32_t AddLocalVariable (Parser * parser)
 {
     Prototype * prototype = CurrentPrototype(parser);
 
-    uint32_t local = prototype->local_variables++;
+    uint32_t local = prototype->function->local_variables++;
     uint32_t length = Current(parser).length;
 
     char * key = (char *)Allocate(length);
@@ -289,6 +287,8 @@ static void VarStatement (Parser * parser)
         Expression(parser);
 
         PushOpArg(parser, OP_STORE, local);
+
+        printf("OP_STORE %i", local);
     }
 }
 
@@ -325,6 +325,8 @@ static void ParseFunctionArguments (Parser * parser)
         uint32_t hash = HashString(argname, length);
 
         SymbolTableAdd(proto->symbols, argname, hash, arg--);
+
+        proto->function->arity++;
     } while (Match(parser, TOKEN_COMMA));
 
     Expect(parser, TOKEN_CLOSE_PAREN);
@@ -411,6 +413,20 @@ static void InfixOperator (Parser * parser)
 }
 
 
+static void Call(Parser * parser)
+{
+    PrintToken(parser);
+
+    do {
+        Expression(parser);
+    } while (Match(parser, TOKEN_COMMA));
+
+    Expect(parser, TOKEN_CLOSE_PAREN);
+
+    PrintToken(parser);
+}
+
+
 static void Identifier (Parser * parser)
 {
     PrintToken(parser); /* Print the identifier token. */
@@ -418,7 +434,17 @@ static void Identifier (Parser * parser)
     uint32_t hash = HashString(Current(parser).start, Current(parser).length);
     uint32_t local = SymbolTableFind(CurrentPrototype(parser)->symbols, hash)->value;
 
-    PushOpArg(parser, OP_LOAD, local);
+    if (Match(parser, TOKEN_OPEN_PAREN))
+    {
+        Call(parser);
+
+        PushOpArg(parser, OP_LOAD, local);
+        PushOp(parser, OP_CALL);
+    }
+    else
+    {
+        PushOpArg(parser, OP_LOAD, local);
+    }
 }
 
 
@@ -465,10 +491,10 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 {
     Parser * parser = NewParser(state, lexer);
 
-    IgnoreNewLines(parser);
-
     while (!Match(parser, TOKEN_EOF))
     {
+        IgnoreNewLines(parser);
+
         ParsePrecedence(parser, PRECEDENCE_NONE);
 
         Expect(parser, TOKEN_NEWLINE);

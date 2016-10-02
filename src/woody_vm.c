@@ -37,11 +37,15 @@ static void PrintStack (WoodyState * state)
             } break;
             case TYPE_FALSE:
             {
-                printf("false");
+                printf("false ");
             } break;
             case TYPE_TRUE:
             {
-                printf("true");
+                printf("true ");
+            } break;
+            case TYPE_FUNCTION:
+            {
+                printf("Function: %p ", i->value.function);
             } break;
             default:
             {
@@ -137,6 +141,28 @@ static void Call (WoodyState * state, WoodyFunction * function)
     frame->ip = function->code->values;
     frame->start = state->current;
 
+    // state->current = state->current + frame->function->local_variables;
+    for (uint32_t i = 0; i < frame->function->local_variables; i++)
+    {
+        PUSH_NUMBER(state, 0.0f);
+    }
+}
+
+
+static void Return (WoodyState * state)
+{
+    CallFrame * frame = CurrentFrame(state);
+    TaggedValue tvalue = *POP(state);
+
+    state->frame_count--;
+    state->current = frame->start - frame->function->arity;
+
+    PUSH(state, tvalue);
+}
+
+
+static void PrintInstruction ()
+{
 
 }
 
@@ -163,11 +189,22 @@ void WoodyRun (WoodyState * state)
             } break;
             case OP_LOAD:
             {
-                CurrentFrame(state)->ip++;
+                CallFrame * frame = CurrentFrame(state);
+                int32_t variable_index = *frame->ip++;
+                TaggedValue * local = (TaggedValue *)(frame->start + variable_index);
+
+                PUSH(state, *local);
             } break;
             case OP_STORE:
             {
-                CurrentFrame(state)->ip++;
+                CallFrame * frame = CurrentFrame(state);
+                int32_t variable_index = *frame->ip++;
+                TaggedValue * tvalue = POP(state);
+
+                TaggedValue * local = (TaggedValue *)(frame->start + variable_index);
+
+                local->value = tvalue->value;
+                local->type = tvalue->type;
             } break;
             case OP_PLUS:
             case OP_MINUS:
@@ -178,11 +215,12 @@ void WoodyRun (WoodyState * state)
             } break;
             case OP_CALL:
             {
-
+                TaggedValue * function = POP(state);
+                Call(state, function->value.function);
             } break;
             case OP_RETURN:
             {
-
+                Return(state);
             } break;
         }
 
