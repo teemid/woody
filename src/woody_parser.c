@@ -19,13 +19,13 @@
 typedef struct
 {
     uint32_t is_upvalue;
-    uint32_t slot;
+    int32_t slot;
 } Local;
 
 
-DECLARE_TABLE(Symbol, const char *, int32_t);
+DECLARE_TABLE(Symbol, const char *, Local);
 
-DEFINE_TABLE(Symbol, const char *, int32_t);
+DEFINE_TABLE(Symbol, const char *, Local);
 
 
 typedef struct
@@ -230,7 +230,8 @@ static uint32_t AddLocalVariable (Parser * parser)
 {
     Prototype * prototype = CurrentPrototype(parser);
 
-    uint32_t local = prototype->function->local_variables++;
+    Local local = { 0, -1 };
+    local.slot = prototype->function->local_variables++;
     uint32_t length = Current(parser).length;
 
     char * key = (char *)Allocate(length);
@@ -238,9 +239,11 @@ static uint32_t AddLocalVariable (Parser * parser)
 
     uint32_t hash = HashString(key, length);
 
+
+
     SymbolTableAdd(prototype->symbols, key, hash, local);
 
-    return local;
+    return local.slot;
 }
 
 
@@ -287,8 +290,6 @@ static void VarStatement (Parser * parser)
         Expression(parser);
 
         PushOpArg(parser, OP_STORE, local);
-
-        printf("OP_STORE %i", local);
     }
 }
 
@@ -313,21 +314,24 @@ static void ParseFunctionArguments (Parser * parser)
 
     int32_t arg = -1;
 
-    do {
-        Expect(parser, TOKEN_IDENTIFIER);
-
+    while (Match(parser, TOKEN_IDENTIFIER))
+    {
         PrintToken(parser);
         // Add identifier as argument and local variable.
+        Local local = { 0, 0 };
+        local.slot = arg--;
         uint32_t length = Current(parser).length;
         char * argname = (char *)Allocate(length * sizeof(char));
         memcpy(argname, Current(parser).start, length * sizeof(char));
 
         uint32_t hash = HashString(argname, length);
 
-        SymbolTableAdd(proto->symbols, argname, hash, arg--);
+        SymbolTableAdd(proto->symbols, argname, hash, local);
 
         proto->function->arity++;
-    } while (Match(parser, TOKEN_COMMA));
+
+        Match(parser, TOKEN_COMMA);
+    }
 
     Expect(parser, TOKEN_CLOSE_PAREN);
 
@@ -432,18 +436,18 @@ static void Identifier (Parser * parser)
     PrintToken(parser); /* Print the identifier token. */
 
     uint32_t hash = HashString(Current(parser).start, Current(parser).length);
-    uint32_t local = SymbolTableFind(CurrentPrototype(parser)->symbols, hash)->value;
+    Local local = (SymbolTableFind(CurrentPrototype(parser)->symbols, hash))->value;
 
     if (Match(parser, TOKEN_OPEN_PAREN))
     {
         Call(parser);
 
-        PushOpArg(parser, OP_LOAD, local);
+        PushOpArg(parser, OP_LOAD, local.slot);
         PushOp(parser, OP_CALL);
     }
     else
     {
-        PushOpArg(parser, OP_LOAD, local);
+        PushOpArg(parser, OP_LOAD, local.slot);
     }
 }
 
