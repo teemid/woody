@@ -98,7 +98,7 @@ static void Lex (WoodyLexer * lexer)
             {
                 char * start = lexer->input + lexer->position;
 
-                while ('a' <= c && c <= 'z')
+                while ('a' <= c && c <= 'z' || c == '_')
                 {
                     lexer->position++;
                     lexer->column_number++;
