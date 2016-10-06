@@ -1,5 +1,13 @@
 #include <stdio.h>
 
+#if _WIN32
+#include <io.h>
+#define F_OK 0
+#define W_OK 2
+#define R_OK 4
+#define access(...) _access(__VA_ARGS__)
+#endif
+
 #include "woody_memory.h"
 #include "woody_opcodes.h"
 #include "woody_state.h"
@@ -21,6 +29,13 @@ uint32_t djb2 (const char * key, size_t length)
 
 char * ReadFile (const char * filename)
 {
+    if (access(filename, F_OK))
+    {
+        printf("File %s is not accessible.\n", filename);
+
+        exit(1);
+    }
+
     FILE * file = fopen(filename, "rb");
 
     if (!file)
