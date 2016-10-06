@@ -1,7 +1,11 @@
-function new_counter()
+function new_counter ()
     var i = 0
 
-    return function ()
-        return i++
+    function count ()
+        i = i + 1
+
+        return i
     end
+
+    return count
 end
