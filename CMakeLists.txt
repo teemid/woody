@@ -1,0 +1,17 @@
+project(woody)
+
+cmake_minimum_required(VERSION 2.6)
+
+set(APPLICATION_NAME ${PROJECT_NAME})
+
+set(APPLICATION_VERSION_MAJOR "0")
+set(APPLICATION_VERSION_MINOR "1")
+set(APPLICATION_VERSION_PATCH "0")
+
+set(APPLICATION_VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}.${APPLICATION_VERSION_PATCH}")
+
+include_directories(include)
+
+file(GLOB SOURCES "src/*.c")
+
+add_executable(woody ${SOURCES})
