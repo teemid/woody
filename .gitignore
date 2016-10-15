@@ -33,4 +33,5 @@
 *.su
 
 # Project files
+_cmake/
 build/
