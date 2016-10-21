@@ -18,8 +18,5 @@ MD %CMAKE_DIR%
     rem Build the actual project
     cmake --build %CMAKE_DIR% --config Debug
 
-    rem Simulate make install (Copy .exe file into build)
-    cmake --build %CMAKE_DIR% --target INSTALL
-
 
 rem Old build: cl /nologo /Od /W4 /wd4127 /wd4996 /Zi /Fobuild\ /Fdbuild\ /c /I "include"
