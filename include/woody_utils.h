@@ -78,6 +78,7 @@
     } name##Table;                                                                            \
                                                                                               \
     name##Table * name##TableNew (size_t initial_capacity);                                   \
+    void name##TableResize(name##Table * table, size_t new_capacity);                         \
     void name##TableFree (name##Table * table);                                               \
     void name##TableAdd (name##Table * table, key_type key, uint32_t hash, value_type value); \
     name##Node * name##TableFind(name##Table * table, uint32_t hash);                         \
@@ -93,10 +94,8 @@ uint32_t djb2(const char * key, size_t length);
 #define DEFINE_TABLE(name, key_type, value_type)                                             \
     name##Table * name##TableNew (size_t initial_capacity)                                   \
     {                                                                                        \
-        name##Table * table = (name##Table *)Allocate(sizeof(name##Table));                  \
-        table->nodes = Buffer(name##Node, initial_capacity);                                 \
-        table->count = 0;                                                                    \
-        table->capacity = initial_capacity;                                                  \
+        name##Table * table = (name##Table *)ZeroAllocate(sizeof(name##Table), 1);           \
+        name##TableResize(table, initial_capacity);                                          \
                                                                                              \
         for (uint32_t i = 0; i < table->capacity; i++)                                       \
         {                                                                                    \
@@ -119,6 +118,7 @@ uint32_t djb2(const char * key, size_t length);
         size_t old_capacity = table->capacity;                                               \
                                                                                              \
         table->nodes = Buffer(name##Node, capacity);                                         \
+        Zero(table->nodes, sizeof(name##Node) * capacity);                                   \
         table->capacity = capacity;                                                          \
                                                                                              \
         name##Node * node = NULL;                                                            \
@@ -136,12 +136,17 @@ uint32_t djb2(const char * key, size_t length);
             }                                                                                \
         }                                                                                    \
                                                                                              \
-        Deallocate(nodes);                                                                   \
+        if (nodes)                                                                           \
+        {                                                                                    \
+            Deallocate(nodes);                                                               \
+        }                                                                                    \
     }                                                                                        \
                                                                                              \
     static void name##TableCheckSize (name##Table * table)                                   \
     {                                                                                        \
-        if (table->count < table->capacity)                                                  \
+        float fillRate = table->count / (float)table->capacity;                              \
+                                                                                             \
+        if (fillRate < 0.7)                                                                  \
         {                                                                                    \
             return;                                                                          \
         }                                                                                    \
