@@ -16,20 +16,29 @@
 #define HashString(key, length) djb2(key, length)
 
 
+typedef enum
+{
+    VAR_UNDEFINED,
+    VAR_LOCAL,
+    VAR_UPVALUE,
+} VariableType;
+
+
 typedef struct
 {
-    uint32_t is_upvalue;
+    VariableType type;
     int32_t slot;
-} Local;
+} Variable;
 
 
-DECLARE_TABLE(Symbol, const char *, Local);
+DECLARE_TABLE(Symbol, const char *, Variable);
 
-DEFINE_TABLE(Symbol, const char *, Local);
+DEFINE_TABLE(Symbol, const char *, Variable);
 
 
-typedef struct
+typedef struct _Prototype
 {
+    struct _Prototype * parent;
     WoodyFunction * function;
     SymbolTable * symbols;
 } Prototype;
@@ -67,6 +76,7 @@ static Prototype * NewPrototype (Parser * parser, WoodyFunction * function)
     uint32_t initial_symbol_count = 20;
 
     Prototype * prototype = parser->prototypes + parser->prototype_count++;
+    prototype->parent = CurrentPrototype(parser);
     prototype->symbols = SymbolTableNew(initial_symbol_count);
     prototype->function = function;
 
@@ -87,6 +97,7 @@ static Parser * NewParser (WoodyState * state, WoodyLexer * lexer)
 
     /* TODO: Initialize 'main' function. */
     parser->current = parser->prototypes + parser->prototype_count++;
+    parser->current->parent = NULL;
     parser->current->function = WoodyFunctionNew(state, NULL);
     parser->current->symbols = SymbolTableNew(20);
 
@@ -226,12 +237,49 @@ static void IgnoreNewLines (Parser * parser)
 }
 
 
+static Variable FindVariable (Parser * parser)
+{
+    Prototype * proto = CurrentPrototype(parser);
+    uint32_t hash = HashString(Current(parser).start, Current(parser).length);
+
+    // Check if local variable.
+    SymbolNode * node = SymbolTableFind(proto->symbols, hash);
+
+    if (node->value.type != VAR_UNDEFINED)
+    {
+        return node->value;
+    }
+
+    proto = proto->parent;
+
+    while (proto)
+    {
+        node = SymbolTableFind(proto->symbols, hash);
+
+        if (node->value.type == VAR_UNDEFINED)
+        {
+            proto = proto->parent;
+        }
+        else
+        {
+            return node->value;
+        }
+    }
+
+    printf("Variable not found.");
+
+    Variable var = { VAR_UNDEFINED, 0 };
+
+    return var;
+}
+
+
 static uint32_t AddLocalVariable (Parser * parser)
 {
     Prototype * prototype = CurrentPrototype(parser);
 
-    Local local = { 0, -1 };
-    local.slot = prototype->function->local_variables++;
+    Variable var = { 0, -1 };
+    var.slot = prototype->function->local_variables++;
     uint32_t length = Current(parser).length;
 
     char * key = (char *)Allocate(length);
@@ -239,11 +287,9 @@ static uint32_t AddLocalVariable (Parser * parser)
 
     uint32_t hash = HashString(key, length);
 
+    SymbolTableAdd(prototype->symbols, key, hash, var);
 
-
-    SymbolTableAdd(prototype->symbols, key, hash, local);
-
-    return local.slot;
+    return var.slot;
 }
 
 
@@ -318,7 +364,7 @@ static void ParseFunctionArguments (Parser * parser)
     {
         PrintToken(parser);
         // Add identifier as argument and local variable.
-        Local local = { 0, 0 };
+        Variable local = { VAR_LOCAL, 0 };
         local.slot = arg--;
         uint32_t length = Current(parser).length;
         char * argname = (char *)Allocate(length * sizeof(char));
@@ -341,11 +387,11 @@ static void ParseFunctionArguments (Parser * parser)
 
 static void FunctionStatement (Parser * parser)
 {
-    PrintToken(parser);
+    PrintToken(parser); // Print function
 
     Expect(parser, TOKEN_IDENTIFIER);
 
-    PrintToken(parser);
+    PrintToken(parser); // Print the identifier
 
     /* Create a function and prototype for the parser. */
     Prototype * prototype = CreateFunction(parser);
@@ -366,7 +412,10 @@ static void FunctionStatement (Parser * parser)
     {
         ParsePrecedence(parser, PRECEDENCE_NONE);
 
-        Expect(parser, TOKEN_NEWLINE);
+        if (Match(parser, TOKEN_NEWLINE))
+        {
+            IgnoreNewLines(parser);
+        }
     }
 
     /* The function body is closed out with the end keyword. */
@@ -435,19 +484,18 @@ static void Identifier (Parser * parser)
 {
     PrintToken(parser); /* Print the identifier token. */
 
-    uint32_t hash = HashString(Current(parser).start, Current(parser).length);
-    Local local = (SymbolTableFind(CurrentPrototype(parser)->symbols, hash))->value;
+    Variable var = FindVariable(parser);
 
     if (Match(parser, TOKEN_OPEN_PAREN))
     {
         Call(parser);
 
-        PushOpArg(parser, OP_LOAD, local.slot);
+        PushOpArg(parser, OP_LOAD, var.slot);
         PushOp(parser, OP_CALL);
     }
     else
     {
-        PushOpArg(parser, OP_LOAD, local.slot);
+        PushOpArg(parser, OP_LOAD, var.slot);
     }
 }
 
@@ -501,7 +549,10 @@ void WoodyParse (WoodyState * state, WoodyLexer * lexer)
 
         ParsePrecedence(parser, PRECEDENCE_NONE);
 
-        Expect(parser, TOKEN_NEWLINE);
+        if (Match(parser, TOKEN_NEWLINE))
+        {
+            IgnoreNewLines(parser);
+        }
     }
 
     PrintToken(parser);
