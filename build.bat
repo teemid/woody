@@ -1,10 +1,22 @@
 @echo off
 
-IF NOT EXIST build MKDIR build
+rem Generate VS Project
 
-PUSHD build
+SET CMAKE_DIR=_cmake
 
-cmake ..
-msbuild woody.vcxproj
+IF EXIST %CMAKE_DIR% GOTO build
 
-POPD
+MD %CMAKE_DIR%
+
+:build
+    PUSHD %CMAKE_DIR%
+
+    cmake .. -G "Visual Studio 14 2015"
+
+    POPD
+
+    rem Build the actual project
+    cmake --build %CMAKE_DIR% --config Debug
+
+
+rem Old build: cl /nologo /Od /W4 /wd4127 /wd4996 /Zi /Fobuild\ /Fdbuild\ /c /I "include"
