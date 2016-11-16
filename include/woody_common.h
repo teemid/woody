@@ -7,10 +7,10 @@
 
 #define UNUSED(var) (void)(var)
 
-#if _WIN32
+#if defined WOODY_WINDOWS
     void PrintToDebug(char * message_format, ...);
 
-    #define Log(message, ...) fprintf(stderr, message, __VA_ARGS__)
+    #define Log(message, ...) PrintToDebug(message, __VA_ARGS__)
 #else
     #define Log(message, ...) fprintf(stderr, message, __VA_ARGS__)
 #endif
