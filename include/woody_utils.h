@@ -23,7 +23,7 @@
     name##Buffer * name##BufferNew (size_t initial_capacity)                    \
     {                                                                           \
         name##Buffer * buffer = (name##Buffer *)Allocate(sizeof(name##Buffer)); \
-        buffer->values = Buffer(type, initial_capacity);                        \
+        buffer->values = AllocateBuffer(type, initial_capacity);                \
         buffer->count = 0;                                                      \
         buffer->capacity = initial_capacity;                                    \
                                                                                 \
@@ -117,7 +117,7 @@ uint32_t djb2(const char * key, size_t length);
         name##Node * nodes = table->nodes;                                                   \
         size_t old_capacity = table->capacity;                                               \
                                                                                              \
-        table->nodes = Buffer(name##Node, capacity);                                         \
+        table->nodes = AllocateBuffer(name##Node, capacity);                                 \
         Zero(table->nodes, sizeof(name##Node) * capacity);                                   \
         table->capacity = capacity;                                                          \
                                                                                              \

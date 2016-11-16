@@ -91,7 +91,7 @@ static Parser * NewParser (WoodyState * state, WoodyLexer * lexer)
     parser->state = state;
 
     uint32_t initial_prototype_count = 10;
-    parser->prototypes = Buffer(Prototype, initial_prototype_count);
+    parser->prototypes = AllocateBuffer(Prototype, initial_prototype_count);
     parser->prototype_count = 0;
     parser->prototype_capacity = initial_prototype_count;
 
@@ -282,8 +282,8 @@ static uint32_t AddLocalVariable (Parser * parser)
     var.slot = prototype->function->local_variables++;
     uint32_t length = Current(parser).length;
 
-    char * key = (char *)Allocate(length);
-    memcpy(key, Current(parser).start, length * sizeof(char));
+    char * key = AllocateBuffer(char, length);
+    Copy(Current(parser).start, key, length);
 
     uint32_t hash = HashString(key, length);
 
@@ -367,8 +367,8 @@ static void ParseFunctionArguments (Parser * parser)
         Variable local = { VAR_LOCAL, 0 };
         local.slot = arg--;
         uint32_t length = Current(parser).length;
-        char * argname = (char *)Allocate(length * sizeof(char));
-        memcpy(argname, Current(parser).start, length * sizeof(char));
+        char * argname = AllocateBuffer(char, length);
+        Copy(Current(parser).start, argname, length);
 
         uint32_t hash = HashString(argname, length);
 

@@ -21,6 +21,7 @@ typedef struct WoodyFunction
     struct WoodyFunction ** functions;
     uint32_t function_count;
     uint32_t function_capacity;
+    char * name;
     ValueBuffer * constants;
     InstructionBuffer * code;
     uint32_t local_variables;
