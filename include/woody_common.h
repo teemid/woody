@@ -7,15 +7,22 @@
 
 #define UNUSED(var) (void)(var)
 
-#define Assert(expression, ...) \
-    if (!expression)            \
-    {                           \
-        printf(##__VA_ARGS__);  \
-        exit(1);                \
-    }                           \
-    else                        \
-    {                           \
-                                \
-    }
+#if _WIN32
+    void PrintToDebug(char * message_format, ...);
+
+    #define Log(message, ...) fprintf(stderr, message, __VA_ARGS__)
+#else
+    #define Log(message, ...) fprintf(stderr, message, __VA_ARGS__)
+#endif
+
+
+#define Assert(expression, message, ...)                                        \
+    if (!expression)                                                            \
+    {                                                                           \
+        Log("Expression: %s failed at %s:%i", #expression, __FILE__, __LINE__); \
+        Log(message, __VA_ARGS__);                                              \
+        exit(1);                                                                \
+    }                                                                           \
+    else { }
 
 #endif

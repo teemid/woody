@@ -142,7 +142,7 @@ static void Lex (WoodyLexer * lexer)
 
                 if (stop != end)
                 {
-                    printf("lexer and strtod not agreeing.\n");
+                    Log("Lexer and strtod not agreeing.\n");
                 }
 
                 ptrdiff_t diff = stop - start;

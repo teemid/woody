@@ -26,35 +26,35 @@
 
 static void PrintStack (WoodyState * state)
 {
-    printf("Stack: ");
+    Log("Stack: ");
     for (StackPtr i = state->stack; i < state->current; i++)
     {
         switch (i->type)
         {
             case TYPE_NUMBER:
             {
-                printf("%f ", i->value.number);
+                Log("%f ", i->value.number);
             } break;
             case TYPE_FALSE:
             {
-                printf("false ");
+                Log("false ");
             } break;
             case TYPE_TRUE:
             {
-                printf("true ");
+                Log("true ");
             } break;
             case TYPE_FUNCTION:
             {
-                printf("Function: %p ", i->value.function);
+                Log("Function: %p ", i->value.function);
             } break;
             default:
             {
-                printf("\nError illegal value.");
+                Log("\nError illegal value.");
             } break;
         }
     }
 
-    printf("\n");
+    Log("\n");
 }
 
 
@@ -177,7 +177,7 @@ void WoodyRun (WoodyState * state)
     while (*CurrentFrame(state)->ip != OP_END)
     {
         uint32_t instruction = *CurrentFrame(state)->ip++;
-        printf("Instruction %s\n", woody_opcodes[instruction]);
+        Log("Instruction %s\n", woody_opcodes[instruction]);
 
         switch (instruction)
         {

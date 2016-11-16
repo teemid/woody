@@ -8,6 +8,7 @@
 #define access(...) _access(__VA_ARGS__)
 #endif
 
+#include "woody_common.h"
 #include "woody_memory.h"
 #include "woody_opcodes.h"
 #include "woody_state.h"
@@ -31,7 +32,7 @@ char * ReadFile (const char * filename)
 {
     if (access(filename, F_OK))
     {
-        printf("File %s is not accessible.\n", filename);
+        Log("File %s is not accessible.\n", filename);
 
         exit(1);
     }
@@ -40,7 +41,7 @@ char * ReadFile (const char * filename)
 
     if (!file)
     {
-        printf("Failed to read file: %s.\n", filename);
+        Log("Failed to read file: %s.\n", filename);
 
         return NULL;
     }
@@ -55,7 +56,7 @@ char * ReadFile (const char * filename)
 
     if (!result)
     {
-        printf("Read error.\n");
+        Log("Read error.\n");
 
         Deallocate(buffer);
 

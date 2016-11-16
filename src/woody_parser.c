@@ -200,8 +200,7 @@ GrammarRule rules[] = {
 #define PushOpArg(parser, op, argument) PushOp(parser, op); PushOp(parser, argument)
 
 #define PrintToken(parser)                  \
-    printf(                                 \
-        "%s %.*s\n",                        \
+    Log("%s %.*s\n",                        \
         woody_tokens[Current(parser).type], \
         (int)Current(parser).length,        \
         Current(parser).start               \
@@ -266,7 +265,7 @@ static Variable FindVariable (Parser * parser)
         }
     }
 
-    printf("Variable not found.");
+    Log("Variable not found.");
 
     Variable var = { VAR_UNDEFINED, 0 };
 
@@ -516,11 +515,7 @@ static void ParsePrecedence (Parser * parser, Precedence precedence)
 {
     GrammarFn prefix = rules[Next(parser)].prefix;
 
-    if (!prefix)
-    {
-        printf("Expected prefix at the start of an expression.");
-        exit(1);
-    }
+    Assert(prefix, "Expected prefix at the start of an expression.");
 
     prefix(parser);
 
@@ -528,11 +523,7 @@ static void ParsePrecedence (Parser * parser, Precedence precedence)
     {
         GrammarFn infix = rules[Next(parser)].infix;
 
-        if (!infix)
-        {
-            printf("Expected an infix operator.");
-            exit(1);
-        }
+        Assert(infix, "Expected an infix operator.");
 
         infix(parser);
     }
