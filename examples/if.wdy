@@ -1,0 +1,7 @@
+var i = 0
+
+if i == 0 then
+    i = i + 2
+else
+    i = i + 5
+end
