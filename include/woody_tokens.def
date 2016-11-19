@@ -6,23 +6,20 @@
 #define KEYWORD(kw, string, length) TOKEN(kw)
 #endif
 
-KEYWORD(VAR, var, 3)
-KEYWORD(FUNCTION, function, 8)
-KEYWORD(RETURN, return, 6)
-KEYWORD(END, end, 3)
-KEYWORD(TRUE, true, 4)
-KEYWORD(FALSE, false, 5)
-
-#if 0
-KEYWORD(IF, if, 2)
-KEYWORD(ELSE, else, 4)
-KEYWORD(BREAK, break, 5)
-KEYWORD(CONTINUE, continue, 8)
-KEYWORD(WHILE, while, 5)
-KEYWORD(FOR, for, 3)
-KEYWORD(IN, in, 2)
-KEYWORD(DO, do, 2)
-#endif
+KEYWORD(VAR,        var,        3)
+KEYWORD(FUNCTION,   function,   8)
+KEYWORD(RETURN,     return,     6)
+KEYWORD(END,        end,        3)
+KEYWORD(TRUE,       true,       4)
+KEYWORD(FALSE,      false,      5)
+KEYWORD(IF,         if,         2)
+KEYWORD(ELSE,       else,       4)
+KEYWORD(BREAK,      break,      5)
+KEYWORD(CONTINUE,   continue,   8)
+KEYWORD(WHILE,      while,      5)
+KEYWORD(FOR,        for,        3)
+KEYWORD(IN,         in,         2)
+KEYWORD(DO,         do,         2)
 
 TOKEN(COMMA)
 TOKEN(PLUS)

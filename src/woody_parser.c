@@ -172,6 +172,14 @@ GrammarRule rules[] = {
     /* TOKEN_END         */ NO_RULE,
     /* TOKEN_TRUE        */ PREFIX(Literal),
     /* TOKEN_FALSE       */ PREFIX(Literal),
+    /* TOKEN IF          */ NO_RULE,
+    /* TOKEN ELSE        */ NO_RULE,
+    /* TOKEN BREAK       */ NO_RULE,
+    /* TOKEN CONTINUE    */ NO_RULE,
+    /* TOKEN WHILE       */ NO_RULE,
+    /* TOKEN FOR         */ NO_RULE,
+    /* TOKEN IN          */ NO_RULE,
+    /* TOKEN DO          */ NO_RULE,
     /* TOKEN_COMMA       */ NO_RULE,
     /* TOKEN_PLUS        */ INFIX_OPERATOR("+", PRECEDENCE_TERM),
     /* TOKEN_MINUS       */ OPERATOR("-"),
@@ -250,7 +258,6 @@ static Variable FindVariable (Parser * parser)
     }
 
     proto = proto->parent;
-
     while (proto)
     {
         node = SymbolTableFind(proto->symbols, hash);
