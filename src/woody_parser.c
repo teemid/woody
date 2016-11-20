@@ -154,6 +154,9 @@ static void ReturnStatement   (Parser * parser);
 static void Identifier        (Parser * parser);
 static void OpenParen         (Parser * parser);
 static void Literal           (Parser * parser);
+static void IfStatement       (Parser * parser);
+static void WhileStatement    (Parser * parser);
+static void ForStatement      (Parser * parser);
 
 
 #define NO_RULE                          { NULL,          NULL,          PRECEDENCE_NONE, NULL }
@@ -172,12 +175,12 @@ GrammarRule rules[] = {
     /* TOKEN_END         */ NO_RULE,
     /* TOKEN_TRUE        */ PREFIX(Literal),
     /* TOKEN_FALSE       */ PREFIX(Literal),
-    /* TOKEN IF          */ NO_RULE,
+    /* TOKEN IF          */ PREFIX(IfStatement),
     /* TOKEN ELSE        */ NO_RULE,
     /* TOKEN BREAK       */ NO_RULE,
     /* TOKEN CONTINUE    */ NO_RULE,
-    /* TOKEN WHILE       */ NO_RULE,
-    /* TOKEN FOR         */ NO_RULE,
+    /* TOKEN WHILE       */ PREFIX(WhileStatement),
+    /* TOKEN FOR         */ PREFIX(ForStatement),
     /* TOKEN IN          */ NO_RULE,
     /* TOKEN DO          */ NO_RULE,
     /* TOKEN_COMMA       */ NO_RULE,
@@ -448,6 +451,26 @@ static void ReturnStatement (Parser * parser)
     Expression(parser);
 
     PushOp(parser, OP_RETURN);
+}
+
+
+static void IfStatement (Parser * parser)
+{
+    PrintToken(parser);
+
+    Expression(parser);
+}
+
+
+static void WhileStatement (Parser * parser)
+{
+
+}
+
+
+static void ForStatement (Parser * parser)
+{
+
 }
 
 
