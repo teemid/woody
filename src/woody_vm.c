@@ -26,35 +26,35 @@
 
 static void PrintStack (WoodyState * state)
 {
-    printf("Stack: ");
+    Log("Stack: ");
     for (StackPtr i = state->stack; i < state->current; i++)
     {
         switch (i->type)
         {
             case TYPE_NUMBER:
             {
-                printf("%f ", i->value.number);
+                Log("%f ", i->value.number);
             } break;
             case TYPE_FALSE:
             {
-                printf("false ");
+                Log("false ");
             } break;
             case TYPE_TRUE:
             {
-                printf("true ");
+                Log("true ");
             } break;
             case TYPE_FUNCTION:
             {
-                printf("Function: %p ", i->value.function);
+                Log("Function: %p ", i->value.function);
             } break;
             default:
             {
-                printf("\nError illegal value.");
+                Log("\nError illegal value.");
             } break;
         }
     }
 
-    printf("\n");
+    Log("\n");
 }
 
 
@@ -117,7 +117,7 @@ static void DoArithmetic (WoodyState * state, Instruction i)
 
 static void InitializeStack (WoodyState * state, uint32_t initial_stack_size)
 {
-    state->stack = Buffer(TaggedValue, initial_stack_size);
+    state->stack = AllocateBuffer(TaggedValue, initial_stack_size);
     state->current = state->stack;
     state->top = state->stack + initial_stack_size;
 
@@ -128,7 +128,7 @@ static void InitializeStack (WoodyState * state, uint32_t initial_stack_size)
 static void AllocateCallFrames (WoodyState * state)
 {
     uint32_t initial_frame_capacity = 5;
-    state->frames = Buffer(CallFrame, initial_frame_capacity);
+    state->frames = AllocateBuffer(CallFrame, initial_frame_capacity);
     state->frame_count = 0;
     state->frame_capacity = initial_frame_capacity;
 }
@@ -177,7 +177,7 @@ void WoodyRun (WoodyState * state)
     while (*CurrentFrame(state)->ip != OP_END)
     {
         uint32_t instruction = *CurrentFrame(state)->ip++;
-        printf("Instruction %s\n", woody_opcodes[instruction]);
+        Log("Instruction %s\n", woody_opcodes[instruction]);
 
         switch (instruction)
         {

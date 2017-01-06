@@ -90,7 +90,7 @@ static Parser * NewParser (WoodyState * state, WoodyLexer * lexer)
     parser->state = state;
 
     uint32_t initial_prototype_count = 10;
-    parser->prototypes = Buffer(Prototype, initial_prototype_count);
+    parser->prototypes = AllocateBuffer(Prototype, initial_prototype_count);
     parser->prototype_count = 0;
     parser->prototype_capacity = initial_prototype_count;
 
@@ -153,6 +153,9 @@ static void ReturnStatement   (Parser * parser);
 static void Identifier        (Parser * parser);
 static void OpenParen         (Parser * parser);
 static void Literal           (Parser * parser);
+static void IfStatement       (Parser * parser);
+static void WhileStatement    (Parser * parser);
+static void ForStatement      (Parser * parser);
 
 
 #define NO_RULE                          { NULL,          NULL,          PRECEDENCE_NONE, NULL }
@@ -171,6 +174,14 @@ GrammarRule rules[] = {
     /* TOKEN_END         */ NO_RULE,
     /* TOKEN_TRUE        */ PREFIX(Literal),
     /* TOKEN_FALSE       */ PREFIX(Literal),
+    /* TOKEN IF          */ PREFIX(IfStatement),
+    /* TOKEN ELSE        */ NO_RULE,
+    /* TOKEN BREAK       */ NO_RULE,
+    /* TOKEN CONTINUE    */ NO_RULE,
+    /* TOKEN WHILE       */ PREFIX(WhileStatement),
+    /* TOKEN FOR         */ PREFIX(ForStatement),
+    /* TOKEN IN          */ NO_RULE,
+    /* TOKEN DO          */ NO_RULE,
     /* TOKEN_COMMA       */ NO_RULE,
     /* TOKEN_PLUS        */ INFIX_OPERATOR("+", PRECEDENCE_TERM),
     /* TOKEN_MINUS       */ OPERATOR("-"),
@@ -199,8 +210,7 @@ GrammarRule rules[] = {
 #define PushOpArg(parser, op, argument) PushOp(parser, op); PushOp(parser, argument)
 
 #define PrintToken(parser)                  \
-    printf(                                 \
-        "%s %.*s\n",                        \
+    Log("%s %.*s\n",                        \
         woody_tokens[Current(parser).type], \
         (int)Current(parser).length,        \
         Current(parser).start               \
@@ -254,7 +264,6 @@ static Variable FindVariable (Parser * parser)
     }
 
     proto = proto->parent;
-
     while (proto)
     {
         node = SymbolTableFind(proto->symbols, hash);
@@ -269,7 +278,7 @@ static Variable FindVariable (Parser * parser)
         }
     }
 
-    printf("Variable not found.");
+    Log("Variable not found.");
 
     Variable var = { VAR_UNDEFINED, 0 };
 
@@ -285,8 +294,8 @@ static uint32_t AddLocalVariable (Parser * parser)
     var.slot = prototype->function->local_variables++;
 
     uint32_t length = Current(parser).length;
-    char * key = (char *)Allocate(length);
-    memcpy(key, Current(parser).start, length * sizeof(char));
+    char * key = AllocateBuffer(char, length);
+    Copy(Current(parser).start, key, length);
 
     uint32_t hash = HashString(key, length);
 
@@ -370,8 +379,8 @@ static void ParseFunctionArguments (Parser * parser)
         Variable local = { VAR_LOCAL, 0 };
         local.slot = arg--;
         uint32_t length = Current(parser).length;
-        char * argname = (char *)Allocate(length * sizeof(char));
-        memcpy(argname, Current(parser).start, length * sizeof(char));
+        char * argname = AllocateBuffer(char, length);
+        Copy(Current(parser).start, argname, length);
 
         uint32_t hash = HashString(argname, length);
 
@@ -448,6 +457,26 @@ static void ReturnStatement (Parser * parser)
 }
 
 
+static void IfStatement (Parser * parser)
+{
+    PrintToken(parser);
+
+    Expression(parser);
+}
+
+
+static void WhileStatement (Parser * parser)
+{
+
+}
+
+
+static void ForStatement (Parser * parser)
+{
+
+}
+
+
 static void UnaryOperator (Parser * parser)
 {
     UNUSED(parser);
@@ -519,11 +548,7 @@ static void ParsePrecedence (Parser * parser, Precedence precedence)
 {
     GrammarFn prefix = rules[Next(parser)].prefix;
 
-    if (!prefix)
-    {
-        printf("Expected prefix at the start of an expression.");
-        exit(1);
-    }
+    Assert(prefix, "Expected prefix at the start of an expression.");
 
     prefix(parser);
 
@@ -531,11 +556,7 @@ static void ParsePrecedence (Parser * parser, Precedence precedence)
     {
         GrammarFn infix = rules[Next(parser)].infix;
 
-        if (!infix)
-        {
-            printf("Expected an infix operator.");
-            exit(1);
-        }
+        Assert(infix, "Expected an infix operator.");
 
         infix(parser);
     }

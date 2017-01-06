@@ -30,7 +30,7 @@ int main (int argc, char ** argv)
 {
     if (argc < 2)
     {
-        printf("Usage: \nwoody <filename>");
+        Log("Usage: \nwoody <filename>");
 
         return 1;
     }
