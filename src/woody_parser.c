@@ -11,7 +11,6 @@
 #include "woody_utils.h"
 #include "woody_value.h"
 
-#define UNUSED(ptr) (void)(ptr)
 
 #define HashString(key, length) djb2(key, length)
 
@@ -48,8 +47,8 @@ typedef struct
 {
     WoodyState * state;
     WoodyLexer * lexer;
-    Prototype * prototypes;
     Prototype * current;
+    Prototype * prototypes;
     uint32_t prototype_count;
     uint32_t prototype_capacity;
 } Parser;
@@ -252,8 +251,12 @@ static Variable FindVariable (Parser * parser)
     Prototype * proto = CurrentPrototype(parser);
     uint32_t hash = HashString(Current(parser).start, Current(parser).length);
 
+    printf("Trying to find %.*s\n", Current(parser).length, Current(parser).start);
+
     // Check if local variable.
     SymbolNode * node = SymbolTableFind(proto->symbols, hash);
+
+    printf("Found node %p\n", node);
 
     if (node->value.type != VAR_UNDEFINED)
     {
@@ -287,10 +290,10 @@ static uint32_t AddLocalVariable (Parser * parser)
 {
     Prototype * prototype = CurrentPrototype(parser);
 
-    Variable var = { 0, -1 };
+    Variable var = { VAR_LOCAL, 0 };
     var.slot = prototype->function->local_variables++;
-    uint32_t length = Current(parser).length;
 
+    uint32_t length = Current(parser).length;
     char * key = AllocateBuffer(char, length);
     Copy(Current(parser).start, key, length);
 
@@ -402,7 +405,7 @@ static void FunctionStatement (Parser * parser)
 
     PrintToken(parser); // Print the identifier
 
-    /* Create a function and prototype for the parser. */
+    // Create a function and prototype for the parser.
     Prototype * prototype = CreateFunction(parser);
     // Add a local variable to the current scope.
     uint32_t local = AddLocalVariable(parser);
