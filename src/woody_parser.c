@@ -352,7 +352,7 @@ static void VarStatement (Parser * parser)
 }
 
 
-static Prototype * CreateFunction (Parser * parser)
+static inline Prototype * CreateFunction (Parser * parser)
 {
     WoodyFunction * parent = CurrentPrototype(parser)->function;
     WoodyFunction * new = WoodyFunctionNew(parser->state, parent);
