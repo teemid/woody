@@ -4,7 +4,7 @@
 
 typedef enum
 {
-    #define OP(name) OP_##name,
+    #define WDY_OP(name) OP_##name,
     #include "woody_opcodes.def"
 } Opcode;
 

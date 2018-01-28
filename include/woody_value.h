@@ -3,10 +3,8 @@
 
 #include "woody_utils.h"
 
-
-/* Forward declaration */
-typedef struct WoodyFunction WoodyFunction;
-typedef struct woody_string_t WoodyString;
+typedef struct WoodyFunction WdyFunction;
+typedef struct WoodyString WdyString;
 
 
 typedef enum
@@ -15,7 +13,7 @@ typedef enum
     TYPE_TRUE,
     TYPE_FALSE,
     TYPE_FUNCTION,
-} WoodyType;
+} WdyType;
 
 
 extern const char * woody_types[];
@@ -24,47 +22,47 @@ extern const char * woody_types[];
 typedef union
 {
     double number;
-    WoodyFunction * function;
-} WoodyValue;
+    WdyFunction * function;
+} WdyValue;
 
 
 /* Object is a linked list of all heap allocated objects. */
 typedef struct Object
 {
-    WoodyType type;
+    WdyType type;
     struct Object * next;
 } Object;
 
 
 typedef struct TaggedValue
 {
-    WoodyValue value;
-    WoodyType type;
+    WdyValue value;
+    WdyType type;
 } TaggedValue;
 
 
-#define Type(tvalue) (tvalue)->type
+#define wdy_type(tvalue) (tvalue)->type
 
-#define IsNumber(tvalue) Type(tvalue) == TYPE_NUMBER
-#define IsFunction(tvalue) Type(tvalue) == TYPE_FUNCTION
-#define IsBoolean(tvalue) (Type(tvalue) == TYPE_FALSE) || (Type(tvalue) == TYPE_FALSE)
+#define wdy_is_number(tvalue) wdy_type(tvalue) == TYPE_NUMBER
+#define wdy_is_function(tvalue) wdy_type(tvalue) == TYPE_FUNCTION
+#define wdy_is_boolean(tvalue) (wdy_type(tvalue) == TYPE_FALSE) || (wdy_type(tvalue) == TYPE_FALSE)
 
-#define Number(tvalue) (tvalue)->value.number
-#define Boolean(tvalue) (tvalue)->value.boolean
-#define Function(tvalue) (tvalue)->value.function
+#define wdy_number(tvalue) (tvalue)->value.number
+#define wdy_boolean(tvalue) (tvalue)->value.boolean
+#define wdy_function(tvalue) (tvalue)->value.function
 
 #define MakeBoolean(value) (value ? TYPE_TRUE : TYPE_FALSE)
-#define MakeNumber(value) (WoodyMakeNumber(value))
-#define MakeFunction(function_pointer) (WoodyMakeFunction(function_pointer))
+#define MakeNumber(value) (wdy_make_number(value))
+#define MakeFunction(function_pointer) (wdy_make_function(function_pointer))
 
 
-DECLARE_BUFFER(Value, TaggedValue);
+DECLARE_BUFFER(Value, value, TaggedValue);
 
 
-int32_t ValueBufferFind (ValueBuffer * buffer, TaggedValue value);
+int32_t value_buffer_find(ValueBuffer * buffer, TaggedValue value);
 
-TaggedValue WoodyMakeNumber (double number);
-TaggedValue WoodyMakeFunction (WoodyFunction * function);
+TaggedValue wdy_make_number(double number);
+TaggedValue wdy_make_function(WdyFunction * function);
 
 
 #endif

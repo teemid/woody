@@ -1,38 +1,38 @@
-#ifndef TOKEN
-#define TOKEN(t)
+#ifndef WDY_TOKEN
+#define WDY_TOKEN(t)
 #endif
 
-#ifndef KEYWORD
-#define KEYWORD(kw, string, length) TOKEN(kw)
+#ifndef WDY_KEYWORD
+#define WDY_KEYWORD(kw, string, length) WDY_TOKEN(kw)
 #endif
 
-KEYWORD(VAR,        var,        3)
-KEYWORD(FUNCTION,   function,   8)
-KEYWORD(RETURN,     return,     6)
-KEYWORD(END,        end,        3)
-KEYWORD(TRUE,       true,       4)
-KEYWORD(FALSE,      false,      5)
-KEYWORD(IF,         if,         2)
-KEYWORD(ELSE,       else,       4)
-KEYWORD(BREAK,      break,      5)
-KEYWORD(CONTINUE,   continue,   8)
-KEYWORD(WHILE,      while,      5)
-KEYWORD(FOR,        for,        3)
-KEYWORD(IN,         in,         2)
-KEYWORD(DO,         do,         2)
+WDY_KEYWORD(VAR,        var,        3)
+WDY_KEYWORD(FUNCTION,   function,   8)
+WDY_KEYWORD(RETURN,     return,     6)
+WDY_KEYWORD(END,        end,        3)
+WDY_KEYWORD(TRUE,       true,       4)
+WDY_KEYWORD(FALSE,      false,      5)
+WDY_KEYWORD(IF,         if,         2)
+WDY_KEYWORD(ELSE,       else,       4)
+WDY_KEYWORD(BREAK,      break,      5)
+WDY_KEYWORD(CONTINUE,   continue,   8)
+WDY_KEYWORD(WHILE,      while,      5)
+WDY_KEYWORD(FOR,        for,        3)
+WDY_KEYWORD(IN,         in,         2)
+WDY_KEYWORD(DO,         do,         2)
 
-TOKEN(COMMA)
-TOKEN(PLUS)
-TOKEN(MINUS)
-TOKEN(ASTERIX)
-TOKEN(SLASH)
-TOKEN(EQ)
-TOKEN(OPEN_PAREN)
-TOKEN(CLOSE_PAREN)
-TOKEN(NUMBER)
-TOKEN(IDENTIFIER)
-TOKEN(NEWLINE)
-TOKEN(EOF)
+WDY_TOKEN(COMMA)
+WDY_TOKEN(PLUS)
+WDY_TOKEN(MINUS)
+WDY_TOKEN(ASTERIX)
+WDY_TOKEN(SLASH)
+WDY_TOKEN(EQ)
+WDY_TOKEN(OPEN_PAREN)
+WDY_TOKEN(CLOSE_PAREN)
+WDY_TOKEN(NUMBER)
+WDY_TOKEN(IDENTIFIER)
+WDY_TOKEN(NEWLINE)
+WDY_TOKEN(EOF)
 
-#undef KEYWORD
-#undef TOKEN
+#undef WDY_KEYWORD
+#undef WDY_TOKEN

@@ -9,10 +9,10 @@ const char * woody_types[] = {
 };
 
 
-DEFINE_BUFFER(Value, TaggedValue);
+DEFINE_BUFFER(Value, value, TaggedValue);
 
 
-int32_t ValueBufferFind(ValueBuffer * buffer, TaggedValue value)
+int32_t value_buffer_find(ValueBuffer * buffer, TaggedValue value)
 {
     for (size_t i = 0; i < buffer->count; i++)
     {
@@ -24,7 +24,7 @@ int32_t ValueBufferFind(ValueBuffer * buffer, TaggedValue value)
             {
                 case TYPE_NUMBER:
                 {
-                    if (Number(search) == Number(&value))
+                    if (wdy_number(search) == wdy_number(&value))
                     {
                         return i;
                     }
@@ -53,7 +53,7 @@ int32_t ValueBufferFind(ValueBuffer * buffer, TaggedValue value)
 }
 
 
-TaggedValue WoodyMakeNumber (double number)
+TaggedValue wdy_make_number(double number)
 {
     TaggedValue tvalue;
     tvalue.value.number = number;
@@ -63,7 +63,7 @@ TaggedValue WoodyMakeNumber (double number)
 }
 
 
-TaggedValue WoodyMakeFunction (WoodyFunction * function)
+TaggedValue wdy_make_function(WdyFunction * function)
 {
     TaggedValue tvalue;
     tvalue.value.function = function;

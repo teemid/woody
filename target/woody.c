@@ -8,21 +8,21 @@
 #include "woody_vm.h"
 
 
-void WoodyRunFile(char * filename)
+void wdy_run_file(char * filename)
 {
-    char * source = ReadFile(filename);
+    char * source = read_file(filename);
 
-    WoodyLexer * lexer = WoodyLexerNew();
-    WoodyState * state = WoodyNewState();
+    WdyLexer * lexer = wdy_lexer_new();
+    WdyState * state = wdy_state_new();
 
-    WoodyLexerSetInput(lexer, source);
+    wdy_lexer_set_input(lexer, source);
 
-    WoodyParse(state, lexer);
+    wdy_parse(state, lexer);
 
-    WoodyRun(state);
+    wdy_run(state);
 
-    Deallocate(source);
-    Deallocate(lexer);
+    wdy_deallocate(source);
+    wdy_deallocate(lexer);
 }
 
 
@@ -30,12 +30,12 @@ int main (int argc, char ** argv)
 {
     if (argc < 2)
     {
-        Log("Usage: \nwoody <filename>");
+        LOG("Usage: \nwoody <filename>");
 
         return 1;
     }
 
-    WoodyRunFile(argv[1]);
+    wdy_run_file(argv[1]);
 
     return 0;
 }

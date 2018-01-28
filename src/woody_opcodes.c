@@ -2,6 +2,6 @@
 
 
 const char * woody_opcodes[] = {
-    #define OP(name) #name,
+    #define WDY_OP(name) #name,
     #include "woody_opcodes.def"
 };

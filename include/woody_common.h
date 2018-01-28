@@ -9,19 +9,19 @@
 #define UNUSED(var) (void)(var)
 
 #if defined WOODY_WINDOWS
-    void PrintToDebug(char * message_format, ...);
+    void print_to_debug(char * message_format, ...);
 
-    #define Log(message, ...) PrintToDebug(message, __VA_ARGS__)
+    #define LOG(message, ...) print_to_debug(message, __VA_ARGS__)
 #else
-    #define Log(message, ...) fprintf(stderr, message, __VA_ARGS__)
+    #define LOG(message, ...) fprintf(stderr, message, __VA_ARGS__)
 #endif
 
 
-#define Assert(expression, message, ...)                                        \
+#define ASSERT(expression, message, ...)                                        \
     if (!expression)                                                            \
     {                                                                           \
-        Log("Expression: %s failed at %s:%i", #expression, __FILE__, __LINE__); \
-        Log(message, __VA_ARGS__);                                              \
+        LOG("Expression: %s failed at %s:%i", #expression, __FILE__, __LINE__); \
+        LOG(message, __VA_ARGS__);                                              \
         exit(1);                                                                \
     }                                                                           \
     else { }

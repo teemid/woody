@@ -28,11 +28,11 @@ uint32_t djb2 (const char * key, size_t length)
 }
 
 
-char * ReadFile (const char * filename)
+char * read_file(const char * filename)
 {
     if (access(filename, F_OK))
     {
-        Log("File %s is not accessible.\n", filename);
+        LOG("File %s is not accessible.\n", filename);
 
         exit(1);
     }
@@ -41,7 +41,7 @@ char * ReadFile (const char * filename)
 
     if (!file)
     {
-        Log("Failed to read file: %s.\n", filename);
+        LOG("Failed to read file: %s.\n", filename);
 
         return NULL;
     }
@@ -50,15 +50,15 @@ char * ReadFile (const char * filename)
     size_t size = ftell(file);
     rewind(file);
 
-    char * buffer = (char *)ZeroAllocate(sizeof(char), size + 1);
+    char * buffer = (char *)wdy_zero_allocate(sizeof(char), size + 1);
     size_t result = fread(buffer, 1, size, file);
     buffer[size] = 0;
 
     if (!result)
     {
-        Log("Read error.\n");
+        LOG("Could not read the file.\n");
 
-        Deallocate(buffer);
+        wdy_deallocate(buffer);
 
         return NULL;
     }

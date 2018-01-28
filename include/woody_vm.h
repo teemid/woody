@@ -2,10 +2,10 @@
 #define WOODY_VM_H
 
 
-typedef struct WoodyState WoodyState;
+typedef struct WoodyState WdyState;
 
 
-void WoodyRun(WoodyState * state);
+void wdy_run(WdyState * state);
 
 
 #endif

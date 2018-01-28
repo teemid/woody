@@ -3,12 +3,12 @@
 #include "woody_value.h"
 
 
-DEFINE_BUFFER(Instruction, Instruction);
+DEFINE_BUFFER(Instruction, instruction, Instruction);
 
 
-WoodyFunction * WoodyFunctionNew (WoodyState * state, WoodyFunction * parent)
+WdyFunction * wdy_function_new(WdyState * state, WdyFunction * parent)
 {
-    WoodyFunction * function = (WoodyFunction *)Allocate(sizeof(WoodyFunction));
+    WdyFunction * function = (WdyFunction *)wdy_allocate(sizeof(WdyFunction));
 
     function->object.next = state->root.next;
     state->root.next = &function->object;
@@ -17,8 +17,8 @@ WoodyFunction * WoodyFunctionNew (WoodyState * state, WoodyFunction * parent)
     function->functions = NULL;
     function->function_count = 0;
     function->function_capacity = 0;
-    function->constants = ValueBufferNew(4);
-    function->code = InstructionBufferNew(20);
+    function->constants = value_buffer_new(4);
+    function->code = instruction_buffer_new(20);
     function->local_variables = 0;
     function->arity = 0;
 
@@ -26,14 +26,14 @@ WoodyFunction * WoodyFunctionNew (WoodyState * state, WoodyFunction * parent)
 }
 
 
-void WoodyFunctionFree (WoodyFunction * function)
+void wdy_function_free(WdyFunction * function)
 {
     if (function->function_count)
     {
-        Deallocate(function->functions);
+        wdy_deallocate(function->functions);
     }
 
-    InstructionBufferFree(function->code);
+    instruction_buffer_free(function->code);
 
-    Deallocate(function);
+    wdy_deallocate(function);
 }

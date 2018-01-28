@@ -6,7 +6,7 @@
 #include "woody_value.h"
 
 typedef int32_t Instruction;
-typedef struct WoodyFunction WoodyFunction;
+typedef struct WoodyFunction WdyFunction;
 typedef struct TaggedValue TaggedValue;
 typedef TaggedValue * StackPtr;
 
@@ -14,14 +14,14 @@ typedef TaggedValue * StackPtr;
 typedef struct
 {
     Instruction * ip;
-    WoodyFunction * function;
+    WdyFunction * function;
     StackPtr start;
 } CallFrame;
 
 
 typedef struct WoodyState
 {
-    WoodyFunction * functions;
+    WdyFunction * functions;
     StackPtr stack;
     StackPtr current;
     StackPtr top;
@@ -29,11 +29,10 @@ typedef struct WoodyState
     uint32_t frame_count;
     uint32_t frame_capacity;
     Object root;
-} WoodyState;
+} WdyState;
 
 
-WoodyState * WoodyNewState ();
-void WoodyFreeState(WoodyState * state);
-
+WdyState * wdy_state_new();
+void wdy_state_free(WdyState * state);
 
 #endif

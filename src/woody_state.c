@@ -2,9 +2,9 @@
 #include "woody_state.h"
 
 
-WoodyState * WoodyNewState ()
+WdyState * wdy_state_new()
 {
-    WoodyState * state = (WoodyState *)Allocate(sizeof(WoodyState));
+    WdyState * state = (WdyState *)wdy_allocate(sizeof(WdyState));
 
     state->stack = NULL;
     state->top = NULL;
@@ -17,9 +17,8 @@ WoodyState * WoodyNewState ()
 }
 
 
-void WoodyStateFree (WoodyState * state)
+void wdy_state_free(WdyState * state)
 {
-    Deallocate(state->stack);
-
-    Deallocate(state);
+    wdy_deallocate(state->stack);
+    wdy_deallocate(state);
 }

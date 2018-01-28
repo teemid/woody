@@ -2,11 +2,11 @@
 #define WOODY_PARSER_H
 
 
-typedef struct WoodyState WoodyState;
-typedef struct WoodyLexer WoodyLexer;
+typedef struct WoodyState WdyState;
+typedef struct WoodyLexer WdyLexer;
 
 
-void WoodyParse (WoodyState * state, WoodyLexer * lexer);
+void wdy_parse(WdyState * state, WdyLexer * lexer);
 
 
 #endif

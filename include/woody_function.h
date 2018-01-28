@@ -11,7 +11,7 @@ typedef int32_t Instruction;
 typedef struct ValueBuffer ValueBuffer;
 
 
-DECLARE_BUFFER(Instruction, Instruction);
+DECLARE_BUFFER(Instruction, instruction, Instruction);
 
 
 typedef struct WoodyFunction
@@ -26,7 +26,7 @@ typedef struct WoodyFunction
     InstructionBuffer * code;
     uint32_t local_variables;
     uint8_t arity;
-} WoodyFunction;
+} WdyFunction;
 
 
 typedef struct
@@ -42,15 +42,15 @@ typedef struct
 
 typedef struct WoodyClosure
 {
-    WoodyFunction * function;
+    WdyFunction * function;
     Upvalue ** upvalues;
-} WoodyClosure;
+} WdyClosure;
 
 
-WoodyFunction * WoodyFunctionNew (WoodyState * state, WoodyFunction * parent);
-void WoodyFunctionFree (WoodyFunction * function);
+WdyFunction * wdy_function_new(WdyState * state, WdyFunction * parent);
+void wdy_function_free(WdyFunction * function);
 
-WoodyClosure * WoodyClosureNew (WoodyFunction * function, uint32_t upvalue_count);
+WdyClosure * wdy_closure_new(WdyFunction * function, uint32_t upvalue_count);
 
 
 #endif

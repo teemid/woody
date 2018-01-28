@@ -9,13 +9,14 @@
 #include <windows.h>
 #endif
 
-void PrintToDebug(char * message_format, ...)
+void print_to_debug(char * message_format, ...)
 {
     va_list args;
     va_start(args, message_format);
 
     int length = vsnprintf(NULL, 0, message_format, args);
-    char * buffer = AllocateBuffer(char, length);
+    char * buffer = wdy_allocate_buffer(char, length);
     vsprintf(buffer, message_format, args);
+
     OutputDebugString(buffer);
 }

@@ -2,10 +2,10 @@
 #define WOODY_H
 
 
-typedef struct WoodyState WoodyState;
-typedef double WoodyNumber;
+typedef struct WoodyState WdyState;
+typedef double WdyNumber;
 
 
-void WoodyRunFile(char * filename);
+void wdy_run_file(char * filename);
 
 #endif

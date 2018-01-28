@@ -7,7 +7,7 @@
 
 const char * woody_tokens[] = {
     #define STR(s) #s
-    #define TOKEN(t) STR(TOKEN_##t),
+    #define WDY_TOKEN(t) STR(TOKEN_##t),
     #include "woody_tokens.def"
     #undef STR
 };
@@ -21,7 +21,7 @@ typedef struct
 
 
 Keyword keywords[] = {
-    #define KEYWORD(kw, str, length) { #str, length },
+    #define WDY_KEYWORD(kw, str, length) { #str, length },
     #include "woody_tokens.def"
 };
 
@@ -29,15 +29,15 @@ Keyword keywords[] = {
 static uint32_t keyword_count = sizeof(keywords) / sizeof(Keyword);
 
 
-#define SetToken(lexer, start_pos, token_type) \
+#define SET_TOKEN(lexer, start_pos, token_type) \
     lexer->current.type = (token_type); \
     lexer->current.start = (start_pos); \
     lexer->current.length = 1
 
 
-WoodyLexer * WoodyLexerNew ()
+WdyLexer * wdy_lexer_new()
 {
-    WoodyLexer * lexer = (WoodyLexer *)Allocate(sizeof(WoodyLexer));
+    WdyLexer * lexer = (WdyLexer *)wdy_allocate(sizeof(WdyLexer));
     lexer->position = 0;
     lexer->linenumber = 0;
     lexer->column_number = 0;
@@ -49,19 +49,19 @@ WoodyLexer * WoodyLexerNew ()
 }
 
 
-void WoodyLexerFree (WoodyLexer * lexer)
+void wdy_lexer_free(WdyLexer * lexer)
 {
-    Deallocate(lexer);
+    wdy_deallocate(lexer);
 }
 
 
-void WoodyLexerSetInput (WoodyLexer * lexer, char * input)
+void wdy_lexer_set_input(WdyLexer * lexer, char * input)
 {
     lexer->input = input;
 }
 
 
-static void Lex (WoodyLexer * lexer)
+static void lex(WdyLexer * lexer)
 {
     char c;
 
@@ -82,7 +82,7 @@ static void Lex (WoodyLexer * lexer)
             {
                 lexer->linenumber++;
                 lexer->position++;
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_NEWLINE);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_NEWLINE);
             } return;
             case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
             case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
@@ -108,15 +108,18 @@ static void Lex (WoodyLexer * lexer)
 
                 for (uint32_t i = 0; i < keyword_count; i++)
                 {
-                    if ((uint32_t)length == keywords[i].length && strncmp(start, keywords[i].keyword, length) == 0)
+                    if (
+                        (uint32_t)length == keywords[i].length
+                        && strncmp(start, keywords[i].keyword, length) == 0
+                    )
                     {
-                        SetToken(lexer, start, TOKEN_VAR + i);
+                        SET_TOKEN(lexer, start, TOKEN_VAR + i);
                         lexer->current.length = length;
                         return;
                     }
                 }
 
-                SetToken(lexer, start, TOKEN_IDENTIFIER);
+                SET_TOKEN(lexer, start, TOKEN_IDENTIFIER);
                 lexer->current.length = length;
             } return;
             case '0': case '1': case '2': case '3': case '4':
@@ -139,68 +142,68 @@ static void Lex (WoodyLexer * lexer)
 
                 if (stop != end)
                 {
-                    Log("Lexer and strtod not agreeing.\n");
+                    LOG("Lexer and strtod not agreeing.\n");
                 }
 
                 ptrdiff_t diff = stop - start;
 
-                SetToken(lexer, start, TOKEN_NUMBER);
+                SET_TOKEN(lexer, start, TOKEN_NUMBER);
                 lexer->current.length = diff;
             } return;
             case ',':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_COMMA);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_COMMA);
                 lexer->position++;
             } return;
             case '+':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_PLUS);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_PLUS);
                 lexer->position++;
             } return;
             case '-':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_MINUS);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_MINUS);
                 lexer->position++;
             } return;
             case '*':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_ASTERIX);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_ASTERIX);
                 lexer->position++;
             } return;
             case '/':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_SLASH);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_SLASH);
                 lexer->position++;
             } return;
             case '=':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_EQ);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_EQ);
                 lexer->position++;
             } return;
             case '(':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_OPEN_PAREN);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_OPEN_PAREN);
                 lexer->position++;
             } return;
             case ')':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_CLOSE_PAREN);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_CLOSE_PAREN);
                 lexer->position++;
             } return;
             case '\0':
             {
-                SetToken(lexer, lexer->input + lexer->position, TOKEN_EOF);
+                SET_TOKEN(lexer, lexer->input + lexer->position, TOKEN_EOF);
             } return;
         }
     }
 }
 
 
-WoodyTokenType WoodyLexerNext(WoodyLexer * lexer)
+WdyTokenType wdy_lexer_next(WdyLexer * lexer)
 {
     if (lexer->lookahead.type == TOKEN_EOF)
     {
-        Lex(lexer);
+        lex(lexer);
     }
     else
     {
@@ -212,13 +215,13 @@ WoodyTokenType WoodyLexerNext(WoodyLexer * lexer)
 }
 
 
-WoodyTokenType WoodyLexerPeek (WoodyLexer * lexer)
+WdyTokenType wdy_lexer_peek(WdyLexer * lexer)
 {
     if (lexer->lookahead.type == TOKEN_EOF)
     {
-        WoodyToken token = lexer->current;
+        WdyToken token = lexer->current;
 
-        WoodyLexerNext(lexer);
+        wdy_lexer_next(lexer);
 
         lexer->lookahead = lexer->current;
         lexer->current = token;

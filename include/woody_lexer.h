@@ -7,9 +7,9 @@
 
 typedef enum
 {
-    #define TOKEN(t) TOKEN_##t,
+    #define WDY_TOKEN(t) TOKEN_##t,
     #include "woody_tokens.def"
-} WoodyTokenType;
+} WdyTokenType;
 
 
 extern const char * woody_tokens[];
@@ -23,11 +23,11 @@ typedef union {
 
 typedef struct
 {
-    WoodyTokenType type;
+    WdyTokenType type;
     Value value;
     const char * start;
     size_t length;
-} WoodyToken;
+} WdyToken;
 
 
 typedef struct WoodyLexer
@@ -37,17 +37,17 @@ typedef struct WoodyLexer
     uint32_t column_number;
     uint32_t position;
 
-    WoodyToken current;
-    WoodyToken lookahead;
-} WoodyLexer;
+    WdyToken current;
+    WdyToken lookahead;
+} WdyLexer;
 
 
-WoodyLexer * WoodyLexerNew ();
-void WoodyLexerFree (WoodyLexer * lexer);
+WdyLexer * wdy_lexer_new();
+void wdy_lexer_free(WdyLexer * lexer);
 
-void WoodyLexerSetInput (WoodyLexer * lexer, char * input);
+void wdy_lexer_set_input(WdyLexer * lexer, char * input);
 
-WoodyTokenType WoodyLexerNext (WoodyLexer * lexer);
-WoodyTokenType WoodyLexerPeek (WoodyLexer * lexer);
+WdyTokenType wdy_lexer_next(WdyLexer * lexer);
+WdyTokenType wdy_lexer_peek(WdyLexer * lexer);
 
 #endif

@@ -20,45 +20,46 @@
     (state)->current->value.type = WOODY_UNDEFINED; \
     ++(state)->current
 
-#define CurrentFrame(state) ((state)->frames + (state)->frame_count - 1)
-#define Constants(state) CurrentFrame(state)->function->constants
+#define CURRENT_FRAME(state) ((state)->frames + (state)->frame_count - 1)
+#define CONSTANTS(state) CURRENT_FRAME(state)->function->constants
 
 
-static void PrintStack (WoodyState * state)
+static void print_stack(WdyState * state)
 {
-    Log("Stack: ");
+    LOG("Stack: ");
+
     for (StackPtr i = state->stack; i < state->current; i++)
     {
         switch (i->type)
         {
             case TYPE_NUMBER:
             {
-                Log("%f ", i->value.number);
+                LOG("%f ", i->value.number);
             } break;
             case TYPE_FALSE:
             {
-                Log("false ");
+                LOG("false ");
             } break;
             case TYPE_TRUE:
             {
-                Log("true ");
+                LOG("true ");
             } break;
             case TYPE_FUNCTION:
             {
-                Log("Function: %p ", i->value.function);
+                LOG("Function: %p ", i->value.function);
             } break;
             default:
             {
-                Log("\nError illegal value.");
+                LOG("\nError illegal value.");
             } break;
         }
     }
 
-    Log("\n");
+    LOG("\n");
 }
 
 
-static void CheckStack (WoodyState * state)
+static void check_stack(WdyState * state)
 {
     if (state->stack == state->top)
     {
@@ -67,9 +68,9 @@ static void CheckStack (WoodyState * state)
 }
 
 
-static void LoadConstant (WoodyState * state, uint32_t index)
+static void load_constants(WdyState * state, uint32_t index)
 {
-    TaggedValue value = Constants(state)->values[index];
+    TaggedValue value = CONSTANTS(state)->values[index];
 
     state->current->value = value.value;
     state->current->type = value.type;
@@ -78,12 +79,12 @@ static void LoadConstant (WoodyState * state, uint32_t index)
 }
 
 
-static void DoArithmetic (WoodyState * state, Instruction i)
+static void do_arithmetic(WdyState * state, Instruction i)
 {
     TaggedValue * a = POP(state);
     TaggedValue * b = POP(state);
 
-    Assert(IsNumber(a) && IsNumber(b), "Trying arithmetic on non-number types");
+    ASSERT(wdy_is_number(a) && wdy_is_number(b), "Trying arithmetic on non-number types");
 
     double result = 0;
 
@@ -91,23 +92,23 @@ static void DoArithmetic (WoodyState * state, Instruction i)
     {
         case OP_PLUS:
         {
-            result = Number(a) + Number(b);
+            result = wdy_number(a) + wdy_number(b);
         } break;
         case OP_MINUS:
         {
-            result = Number(b) - Number(a);
+            result = wdy_number(b) - wdy_number(a);
         } break;
         case OP_MULT:
         {
-            result = Number(a) * Number(b);
+            result = wdy_number(a) * wdy_number(b);
         } break;
         case OP_DIV:
         {
-            result = Number(b) / Number(a);
+            result = wdy_number(b) / wdy_number(a);
         } break;
         default:
         {
-            Assert(false, "Illegal arithmetic operation\n");
+            ASSERT(false, "Illegal arithmetic operation\n");
         } break;
     }
 
@@ -115,9 +116,9 @@ static void DoArithmetic (WoodyState * state, Instruction i)
 }
 
 
-static void InitializeStack (WoodyState * state, uint32_t initial_stack_size)
+static void initialize_stack(WdyState * state, uint32_t initial_stack_size)
 {
-    state->stack = AllocateBuffer(TaggedValue, initial_stack_size);
+    state->stack = wdy_allocate_buffer(TaggedValue, initial_stack_size);
     state->current = state->stack;
     state->top = state->stack + initial_stack_size;
 
@@ -125,16 +126,16 @@ static void InitializeStack (WoodyState * state, uint32_t initial_stack_size)
 }
 
 
-static void AllocateCallFrames (WoodyState * state)
+static void allocate_call_frames(WdyState * state)
 {
     uint32_t initial_frame_capacity = 5;
-    state->frames = AllocateBuffer(CallFrame, initial_frame_capacity);
+    state->frames = wdy_allocate_buffer(CallFrame, initial_frame_capacity);
     state->frame_count = 0;
     state->frame_capacity = initial_frame_capacity;
 }
 
 
-static void Call (WoodyState * state, WoodyFunction * function)
+static void call(WdyState * state, WdyFunction * function)
 {
     CallFrame * frame = state->frames + state->frame_count++;
     frame->function = function;
@@ -149,9 +150,9 @@ static void Call (WoodyState * state, WoodyFunction * function)
 }
 
 
-static void Return (WoodyState * state)
+static void wdy_return(WdyState * state)
 {
-    CallFrame * frame = CurrentFrame(state);
+    CallFrame * frame = CURRENT_FRAME(state);
     TaggedValue tvalue = *POP(state);
 
     state->frame_count--;
@@ -161,35 +162,35 @@ static void Return (WoodyState * state)
 }
 
 
-static void PrintInstruction ()
+static void print_instruction()
 {
 
 }
 
 
-void WoodyRun (WoodyState * state)
+void wdy_run(WdyState * state)
 {
-    InitializeStack(state, 20);
-    AllocateCallFrames(state);
+    initialize_stack(state, 20);
+    allocate_call_frames(state);
     /* Call the 'main' function. */
-    Call(state, state->functions);
+    call(state, state->functions);
 
-    while (*CurrentFrame(state)->ip != OP_END)
+    while (*CURRENT_FRAME(state)->ip != OP_END)
     {
-        uint32_t instruction = *CurrentFrame(state)->ip++;
-        Log("Instruction %s\n", woody_opcodes[instruction]);
+        uint32_t instruction = *CURRENT_FRAME(state)->ip++;
+        LOG("Instruction %s\n", woody_opcodes[instruction]);
 
         switch (instruction)
         {
             case OP_LOAD_CONSTANT:
             {
-                uint32_t index = *CurrentFrame(state)->ip++;
+                uint32_t index = *CURRENT_FRAME(state)->ip++;
 
-                LoadConstant(state, index);
+                load_constants(state, index);
             } break;
             case OP_LOAD:
             {
-                CallFrame * frame = CurrentFrame(state);
+                CallFrame * frame = CURRENT_FRAME(state);
                 int32_t variable_index = *frame->ip++;
                 TaggedValue * local = (TaggedValue *)(frame->start + variable_index);
 
@@ -197,7 +198,7 @@ void WoodyRun (WoodyState * state)
             } break;
             case OP_STORE:
             {
-                CallFrame * frame = CurrentFrame(state);
+                CallFrame * frame = CURRENT_FRAME(state);
                 int32_t variable_index = *frame->ip++;
                 TaggedValue * tvalue = POP(state);
 
@@ -211,20 +212,20 @@ void WoodyRun (WoodyState * state)
             case OP_MULT:
             case OP_DIV:
             {
-                DoArithmetic(state, instruction);
+                do_arithmetic(state, instruction);
             } break;
             case OP_CALL:
             {
                 TaggedValue * function = POP(state);
-                Call(state, function->value.function);
+                call(state, function->value.function);
             } break;
             case OP_RETURN:
             {
-                Return(state);
+                wdy_return(state);
             } break;
         }
 
-        PrintStack(state);
-        CheckStack(state);
+        print_stack(state);
+        check_stack(state);
     }
 }
